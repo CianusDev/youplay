@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sika — Lecture en cours</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#FFD60A}
+.scroll::-webkit-scrollbar{display:none}
+.cv{position:relative;overflow:hidden;flex-shrink:0}
+.cv::before{content:"";position:absolute}
+.c2{background:#FF7A1A}.c2::before{width:90%;height:90%;left:-25%;bottom:-45%;border-radius:50%;background:#FFD60A}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#F6F3EA;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:24px}
+.ib:hover{background:rgba(255,255,255,0.06)}
+.wave{position:relative;height:56px;border-radius:12px}
+.wave input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;margin:0}
+.wave:focus-within{outline:2px solid #FFD60A;outline-offset:4px}
+.wave i{flex:1;border-radius:2px;display:block}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0F0E0B; color: #F6F3EA; font-family: Manrope, sans-serif">
+<div style="position: absolute; left: -120px; top: -160px; width: 630px; height: 520px; border-radius: 50%; background: #FF7A1A; opacity: 0.16; filter: blur(60px)"></div>
+
+<div class="scroll" style="position: absolute; inset: 0; overflow-y: auto; padding: 54px 24px 40px; box-sizing: border-box">
+
+<header style="display: flex; align-items: center; justify-content: space-between; margin: 0 -12px">
+<a href="Main.dc.html" class="ib" aria-label="Réduire le lecteur">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+</a>
+<div style="text-align: center">
+<div style="font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase; color: #C9C3B3; font-weight: 600">Lecture depuis la playlist</div>
+<div style="font-weight: 700; font-size: 14px; margin-top: 2px">Lomé by Night</div>
+</div>
+<button class="ib" aria-label="Plus d'options">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+</button>
+</header>
+
+<div class="cv c2" style="width: 342px; height: 342px; border-radius: 22px; margin-top: 28px; box-shadow: 0 30px 60px rgba(0,0,0,0.55)"></div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 30px; gap: 12px">
+<div style="min-width: 0">
+<h1 style="margin: 0; font: 800 28px/1.1 'Bricolage Grotesque', sans-serif; letter-spacing: -0.6px">Soleil de Bè</h1>
+<a href="Playlist.dc.html" style="font-size: 15px; color: #C9C3B3; font-weight: 500; display: inline-block; margin-top: 4px">Ama Kodjo</a>
+</div>
+<button class="ib" aria-label="Ajouter aux favoris" aria-pressed="{{liked}}" onClick="{{toggleLike}}" style="color: {{likeColor}}">
+<svg width="28" height="28" viewBox="0 0 24 24" fill="{{likeFill}}" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1 8.2 3.4 4.5 7 4.5c2.1 0 3.6 1.1 5 3 1.4-1.9 2.9-3 5-3 3.6 0 6 3.7 4.5 7.3C19.5 16.4 12 21 12 21z"></path></svg>
+</button>
+</div>
+
+<div style="margin-top: 20px">
+<div class="wave">
+<div aria-hidden="true" style="position: absolute; inset: 0; display: flex; align-items: center; gap: 2px">
+<sc-for list="{{bars}}" as="b" hint-placeholder-count="56"><i style="height: {{b.h}}; background: {{b.c}}"></i></sc-for>
+</div>
+<div aria-hidden="true" style="position: absolute; top: 2px; bottom: 2px; left: {{posPct}}; width: 3px; margin-left: -1px; border-radius: 2px; background: #F6F3EA; box-shadow: 0 0 0 3px rgba(15,14,11,0.6)"></div>
+<label for="seek" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Position dans le titre</label>
+<input id="seek" type="range" min="0" max="221" step="1" value="{{pos}}" aria-valuetext="{{posText}}" onChange="{{seek}}">
+</div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px">
+<span style="font: 800 13px Manrope, sans-serif; color: #FFD60A; font-variant-numeric: tabular-nums">{{elapsed}}</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 700; color: #C9C3B3; background: #1F1D17; border-radius: 10px; padding: 4px 10px">
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#FFD60A" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M3 10v4M7 6v12M11 3v18M15 7v10M19 10v4"></path></svg>Haute qualité</span>
+<span style="font: 600 13px Manrope, sans-serif; color: #C9C3B3; font-variant-numeric: tabular-nums">{{remaining}}</span>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px">
+<button class="ib" aria-label="Lecture aléatoire" aria-pressed="{{shuffle}}" onClick="{{toggleShuffle}}" style="color: {{shuffleColor}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"></path></svg>
+</button>
+<button class="ib" aria-label="Titre précédent" style="width: 56px; height: 56px">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5.8v12.4a.8.8 0 0 1-1.2.7L9.5 12.7a.8.8 0 0 1 0-1.4l9.3-6.2a.8.8 0 0 1 1.2.7z"></path></svg>
+</button>
+<button aria-label="{{playLabel}}" onClick="{{togglePlay}}" style="width: 76px; height: 76px; border-radius: 38px; border: 0; background: #FFD60A; color: #141208; display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 10px 30px rgba(255,214,10,0.28)">
+<sc-if value="{{playing}}" hint-placeholder-val="{{ true }}"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></sc-if>
+<sc-if value="{{paused}}" hint-placeholder-val="{{ false }}"><svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"></path></svg></sc-if>
+</button>
+<button class="ib" aria-label="Titre suivant" style="width: 56px; height: 56px">
+<svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5.8v12.4a.8.8 0 0 0 1.2.7l9.3-6.2a.8.8 0 0 0 0-1.4L5.2 5.1A.8.8 0 0 0 4 5.8z"></path></svg>
+</button>
+<button class="ib" aria-label="Répéter" aria-pressed="{{repeat}}" onClick="{{toggleRepeat}}" style="color: {{repeatColor}}">
+<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m17 2 4 4-4 4"></path><path d="M3 11v-1a4 4 0 0 1 4-4h14"></path><path d="m7 22-4-4 4-4"></path><path d="M21 13v1a4 4 0 0 1-4 4H3"></path></svg>
+</button>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; margin: 10px -12px 0">
+<button class="ib" aria-label="Appareils connectés" style="color: #FFD60A; width: auto; padding: 0 12px; gap: 8px; font: 700 12px Manrope, sans-serif">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"></rect><circle cx="12" cy="14" r="4"></circle><path d="M12 6h.01"></path></svg>Enceinte salon
+</button>
+<div style="display: flex">
+<button class="ib" aria-label="Partager"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7M16 6l-4-4-4 4M12 2v14"></path></svg></button>
+<button class="ib" aria-label="File d'attente"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 6h13M3 12h13M3 18h9M19 14v7M16 18h6"></path></svg></button>
+</div>
+</div>
+
+<section style="margin-top: 24px; background: #FFD60A; color: #141208; border-radius: 22px; padding: 20px 20px 22px">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h2 style="margin: 0; font: 800 17px 'Bricolage Grotesque', sans-serif">Paroles</h2>
+<button aria-label="Agrandir les paroles" style="width: 36px; height: 36px; border-radius: 18px; border: 0; background: rgba(20,18,8,0.12); color: #141208; display: flex; align-items: center; justify-content: center; cursor: pointer">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"></path></svg>
+</button>
+</div>
+<p style="margin: 14px 0 0; font: 700 21px/1.35 'Bricolage Grotesque', sans-serif; opacity: 0.4">[Ligne de paroles précédente]</p>
+<p style="margin: 6px 0 0; font: 800 23px/1.3 'Bricolage Grotesque', sans-serif">[Ligne en cours, synchronisée]</p>
+<p style="margin: 6px 0 0; font: 700 21px/1.35 'Bricolage Grotesque', sans-serif; opacity: 0.4">[Ligne suivante]</p>
+</section>
+
+<section style="margin-top: 14px; background: #1A1915; border-radius: 22px; padding: 18px 20px; display: flex; align-items: center; gap: 14px">
+<div style="width: 56px; height: 56px; border-radius: 50%; background: #FF7A1A; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font: 800 20px 'Bricolage Grotesque', sans-serif; color: #141208">AK</div>
+<div style="flex: 1">
+<div style="font-weight: 700; font-size: 15px">Ama Kodjo</div>
+<div style="font-size: 12px; color: #A39E8F; margin-top: 2px">[N] auditeurs mensuels</div>
+</div>
+<button style="height: 36px; padding: 0 16px; border-radius: 18px; border: 1.5px solid #F6F3EA; background: transparent; color: #F6F3EA; font: 700 12px Manrope, sans-serif; cursor: pointer">Suivre</button>
+</section>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { playing: true, liked: true, shuffle: true, repeat: false, pos: 84 }; }
+  renderVals() {
+    const s = this.state;
+    const total = 221, n = 56;
+    const fmt = (t) => Math.floor(t / 60) + ':' + String(Math.floor(t % 60)).padStart(2, '0');
+    const done = s.pos / total;
+    const bars = Array.from({ length: n }, (_, i) => {
+      const v = 0.35 + 0.35 * Math.abs(Math.sin(i * 0.9)) + 0.3 * Math.abs(Math.sin(i * 0.37 + 1));
+      return { h: Math.round(10 + v * 40) + 'px', c: (i + 0.5) / n <= done ? '#FFD60A' : '#3A372D' };
+    });
+    return {
+      bars, pos: s.pos, posPct: (done * 100).toFixed(2) + '%',
+      elapsed: fmt(s.pos), remaining: '-' + fmt(total - s.pos),
+      posText: fmt(s.pos) + ' sur ' + fmt(total),
+      seek: (e) => this.setState({ pos: Number(e.target.value) }),
+      playing: s.playing, paused: !s.playing,
+      playLabel: s.playing ? 'Pause' : 'Lecture',
+      togglePlay: () => this.setState({ playing: !s.playing }),
+      liked: s.liked ? 'true' : 'false',
+      toggleLike: () => this.setState({ liked: !s.liked }),
+      likeColor: s.liked ? '#FFD60A' : '#F6F3EA',
+      likeFill: s.liked ? '#FFD60A' : 'none',
+      shuffle: s.shuffle ? 'true' : 'false',
+      toggleShuffle: () => this.setState({ shuffle: !s.shuffle }),
+      shuffleColor: s.shuffle ? '#FFD60A' : '#F6F3EA',
+      repeat: s.repeat ? 'true' : 'false',
+      toggleRepeat: () => this.setState({ repeat: !s.repeat }),
+      repeatColor: s.repeat ? '#FFD60A' : '#F6F3EA'
+    };
+  }
+}
+</script>
+</body>
+</html>

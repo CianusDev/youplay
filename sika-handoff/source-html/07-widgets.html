@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sika — Widgets</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#FFD60A}a:hover{color:#FFE878}
+.cv{position:relative;overflow:hidden;flex-shrink:0}
+.cv::before{content:"";position:absolute}
+.c1{background:#FFD60A}.c1::before{width:62%;height:62%;left:19%;top:19%;border-radius:50%;background:#141208}
+.c2{background:#FF7A1A}.c2::before{width:90%;height:90%;left:-25%;bottom:-45%;border-radius:50%;background:#FFD60A}
+.c3{background:#1F3B2D}.c3::before{inset:0;background:repeating-linear-gradient(135deg,#FFD60A 0 8%,transparent 8% 20%)}
+.c4{background:#F1E6C8}.c4::before{width:46%;height:46%;right:12%;top:12%;background:#141208}
+.c5{background:#3A2A55}.c5::before{width:56%;height:56%;left:22%;top:22%;border-radius:50%;border:4px solid #FFD60A;box-sizing:border-box}
+.wb{border:0;background:transparent;color:inherit;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.lbl{font:700 11px Manrope,sans-serif;letter-spacing:1.2px;text-transform:uppercase;color:#A39E8F}
+</style>
+</helmet>
+<div style="width: 1240px; height: 844px; box-sizing: border-box; padding: 40px; display: flex; gap: 40px; background: #181611; color: #F6F3EA; font-family: Manrope, sans-serif">
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 12px">
+<div class="lbl">Écran d'accueil</div>
+<div style="flex: 1; border-radius: 48px; background: #2B2418; border: 8px solid #050504; position: relative; overflow: hidden; padding: 56px 17px 0; box-sizing: border-box">
+<div style="position: absolute; inset: 0; background: radial-gradient(circle at 80% 10%, #6B4A12 0, transparent 55%), radial-gradient(circle at 10% 90%, #3D2A55 0, transparent 50%)"></div>
+<div style="position: relative; display: flex; flex-direction: column; gap: 16px">
+
+<div style="height: 158px; border-radius: 24px; background: #141208; padding: 14px; box-sizing: border-box; display: flex; gap: 14px">
+<div class="cv c2" style="width: 130px; height: 130px; border-radius: 14px"></div>
+<div style="flex: 1; display: flex; flex-direction: column; min-width: 0">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font: 800 12px 'Bricolage Grotesque', sans-serif; color: #FFD60A">Sika</span>
+<div aria-hidden="true" style="display: flex; align-items: flex-end; gap: 2px; height: 12px"><span style="width: 3px; height: 7px; background: #FFD60A"></span><span style="width: 3px; height: 12px; background: #FFD60A"></span><span style="width: 3px; height: 5px; background: #FFD60A"></span></div>
+</div>
+<div style="font: 800 18px/1.1 'Bricolage Grotesque', sans-serif; margin-top: 10px">Soleil de Bè</div>
+<div style="font-size: 12px; color: #A39E8F; margin-top: 2px">Ama Kodjo</div>
+<div style="height: 3px; background: #3A372D; border-radius: 2px; margin-top: auto"><div style="width: 38%; height: 3px; background: #FFD60A; border-radius: 2px"></div></div>
+<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px">
+<button class="wb" aria-label="Précédent" style="width: 32px; height: 32px"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5.8v12.4a.8.8 0 0 1-1.2.7L9.5 12.7a.8.8 0 0 1 0-1.4l9.3-6.2a.8.8 0 0 1 1.2.7z"></path></svg></button>
+<button class="wb" aria-label="Pause" style="width: 40px; height: 40px; border-radius: 20px; background: #FFD60A; color: #141208"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></button>
+<button class="wb" aria-label="Suivant" style="width: 32px; height: 32px"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5.8v12.4a.8.8 0 0 0 1.2.7l9.3-6.2a.8.8 0 0 0 0-1.4L5.2 5.1A.8.8 0 0 0 4 5.8z"></path></svg></button>
+</div>
+</div>
+</div>
+
+<div style="display: flex; gap: 16px">
+<div style="width: 162px; height: 162px; border-radius: 24px; background: #FFD60A; color: #141208; padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; position: relative; overflow: hidden">
+<div style="position: absolute; right: -30px; bottom: -30px; width: 110px; height: 110px; border-radius: 50%; background: #141208"></div>
+<span style="font: 800 12px 'Bricolage Grotesque', sans-serif">Sika</span>
+<div style="font: 800 20px/1.05 'Bricolage Grotesque', sans-serif; margin-top: 8px; letter-spacing: -0.4px">Daily<br>Mix 1</div>
+<div style="font-size: 11px; font-weight: 600; margin-top: 4px">50 titres pour toi</div>
+<button class="wb" aria-label="Lire Daily Mix 1" style="position: absolute; right: 14px; bottom: 14px; width: 44px; height: 44px; border-radius: 22px; background: #FFD60A; color: #141208"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"></path></svg></button>
+</div>
+<div style="width: 162px; height: 162px; border-radius: 24px; background: #141208; padding: 10px; box-sizing: border-box; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+<div class="cv c1" style="border-radius: 12px"></div>
+<div class="cv c3" style="border-radius: 12px"></div>
+<div class="cv c4" style="border-radius: 12px"></div>
+<div class="cv c5" style="border-radius: 12px"></div>
+</div>
+</div>
+
+<div style="border-radius: 24px; background: #141208; padding: 16px; box-sizing: border-box">
+<div style="display: flex; justify-content: space-between; align-items: center">
+<span style="font: 800 15px 'Bricolage Grotesque', sans-serif">Reprendre l'écoute</span>
+<span style="font: 800 12px 'Bricolage Grotesque', sans-serif; color: #FFD60A">Sika</span>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px; margin-top: 12px">
+<div style="display: flex; align-items: center; gap: 10px"><div class="cv c2" style="width: 40px; height: 40px; border-radius: 8px"></div><div style="flex: 1"><div style="font-weight: 700; font-size: 13px; color: #FFD60A">Lomé by Night</div><div style="font-size: 11px; color: #A39E8F">En cours · Playlist</div></div></div>
+<div style="display: flex; align-items: center; gap: 10px"><div class="cv c4" style="width: 40px; height: 40px; border-radius: 8px"></div><div style="flex: 1"><div style="font-weight: 700; font-size: 13px">Tech en Afrique</div><div style="font-size: 11px; color: #A39E8F">Podcast · 12 min restantes</div></div></div>
+<div style="display: flex; align-items: center; gap: 10px"><div class="cv c3" style="width: 40px; height: 40px; border-radius: 8px"></div><div style="flex: 1"><div style="font-weight: 700; font-size: 13px">Afro Focus</div><div style="font-size: 11px; color: #A39E8F">Playlist · Téléchargée</div></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<div style="width: 390px; display: flex; flex-direction: column; gap: 12px">
+<div class="lbl">Écran de verrouillage</div>
+<div style="flex: 1; border-radius: 48px; background: #0B0A08; border: 8px solid #050504; position: relative; overflow: hidden; padding: 60px 20px 0; box-sizing: border-box">
+<div style="position: absolute; left: -80px; top: 220px; width: 520px; height: 520px; border-radius: 50%; background: #FF7A1A; opacity: 0.22; filter: blur(80px)"></div>
+<div style="position: relative; text-align: center">
+<div style="font: 600 16px Manrope, sans-serif; color: #E8E2D2">Mardi 13 octobre</div>
+<div style="font: 800 88px/1 'Bricolage Grotesque', sans-serif; letter-spacing: -3px; margin-top: 4px">21:08</div>
+
+<div style="display: flex; justify-content: center; gap: 14px; margin-top: 14px">
+<div role="img" aria-label="Progression du titre : 38 %" style="width: 60px; height: 60px; border-radius: 50%; background: conic-gradient(#FFD60A 0 38%, rgba(255,255,255,0.18) 38% 100%); display: flex; align-items: center; justify-content: center">
+<div style="width: 50px; height: 50px; border-radius: 50%; background: #1A1915; display: flex; align-items: center; justify-content: center; color: #FFD60A"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></div>
+</div>
+<div style="height: 60px; padding: 0 16px; border-radius: 18px; background: rgba(26,25,21,0.85); display: flex; flex-direction: column; justify-content: center; text-align: left">
+<div style="font-size: 10px; font-weight: 700; color: #FFD60A; letter-spacing: 0.8px; text-transform: uppercase">À suivre</div>
+<div style="font-weight: 700; font-size: 13px; margin-top: 2px">Maquis 228 · DJ Kpalimé</div>
+</div>
+</div>
+</div>
+
+<div style="position: absolute; left: 14px; right: 14px; bottom: 120px; border-radius: 28px; background: rgba(36,33,25,0.92); padding: 16px; box-sizing: border-box">
+<div style="display: flex; gap: 12px; align-items: center">
+<div class="cv c2" style="width: 52px; height: 52px; border-radius: 10px"></div>
+<div style="flex: 1; min-width: 0"><div style="font-weight: 700; font-size: 15px">Soleil de Bè</div><div style="font-size: 13px; color: #C9C3B3">Ama Kodjo</div></div>
+<span style="font: 800 13px 'Bricolage Grotesque', sans-serif; color: #FFD60A">Sika</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; margin-top: 14px; font-size: 11px; color: #C9C3B3; font-weight: 600">
+<span>1:24</span><div style="flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.2)"><div style="width: 38%; height: 4px; border-radius: 2px; background: #FFD60A"></div></div><span>-2:17</span>
+</div>
+<div style="display: flex; justify-content: space-around; align-items: center; margin-top: 12px; color: #F6F3EA">
+<button class="wb" aria-label="J'aime" style="width: 44px; height: 44px; color: #FFD60A"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 21s-7.5-4.6-9.5-9.2C1 8.2 3.4 4.5 7 4.5c2.1 0 3.6 1.1 5 3 1.4-1.9 2.9-3 5-3 3.6 0 6 3.7 4.5 7.3C19.5 16.4 12 21 12 21z"></path></svg></button>
+<button class="wb" aria-label="Précédent" style="width: 44px; height: 44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M6 5h2v14H6zM20 5.8v12.4a.8.8 0 0 1-1.2.7L9.5 12.7a.8.8 0 0 1 0-1.4l9.3-6.2a.8.8 0 0 1 1.2.7z"></path></svg></button>
+<button class="wb" aria-label="Pause" style="width: 56px; height: 56px; border-radius: 28px; background: #FFD60A; color: #141208"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></button>
+<button class="wb" aria-label="Suivant" style="width: 44px; height: 44px"><svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16 5h2v14h-2zM4 5.8v12.4a.8.8 0 0 0 1.2.7l9.3-6.2a.8.8 0 0 0 0-1.4L5.2 5.1A.8.8 0 0 0 4 5.8z"></path></svg></button>
+<button class="wb" aria-label="Appareils" style="width: 44px; height: 44px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"></rect><circle cx="12" cy="14" r="4"></circle></svg></button>
+</div>
+</div>
+</div>
+</div>
+
+<div style="flex: 1; display: flex; flex-direction: column; gap: 20px; min-width: 0">
+<div>
+<div class="lbl">Système de widgets</div>
+<h2 style="margin: 10px 0 0; font: 800 34px/1.02 'Bricolage Grotesque', sans-serif; letter-spacing: -1px">Ta musique, sans ouvrir l'app.</h2>
+<p style="margin: 12px 0 0; font-size: 14px; line-height: 1.55; color: #C9C3B3">Quatre formats : petit, moyen, grand et écran verrouillé. Le jaune signale toujours l'action principale : lecture, pause, titre en cours.</p>
+</div>
+
+<div>
+<div class="lbl" style="margin-bottom: 10px">Android · barre 4×1</div>
+<div style="height: 76px; border-radius: 38px; background: #FFD60A; color: #141208; display: flex; align-items: center; gap: 10px; padding: 0 8px 0 10px">
+<div class="cv c2" style="width: 56px; height: 56px; border-radius: 28px"></div>
+<div style="flex: 1; min-width: 0"><div style="font-weight: 800; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Soleil de Bè</div><div style="font-size: 12px; font-weight: 600">Ama Kodjo</div></div>
+<button class="wb" aria-label="Pause" style="width: 56px; height: 56px; border-radius: 28px; background: #141208; color: #FFD60A"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></button>
+</div>
+</div>
+
+<div>
+<div class="lbl" style="margin-bottom: 10px">Montre · complication</div>
+<div style="display: flex; gap: 14px; align-items: center">
+<div style="width: 120px; height: 140px; border-radius: 36px; background: #050504; border: 4px solid #2A271E; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px">
+<div style="font: 800 22px 'Bricolage Grotesque', sans-serif">21:08</div>
+<div role="img" aria-label="Lecture en cours, 38 %" style="width: 48px; height: 48px; border-radius: 50%; background: conic-gradient(#FFD60A 0 38%, #2A271E 38% 100%); display: flex; align-items: center; justify-content: center"><div style="width: 38px; height: 38px; border-radius: 50%; background: #050504; color: #FFD60A; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></div></div>
+</div>
+<p style="margin: 0; font-size: 12px; line-height: 1.5; color: #A39E8F; flex: 1">Anneau de progression jaune, pause en un tap.</p>
+</div>
+</div>
+
+<div style="margin-top: auto; display: flex; gap: 8px; flex-wrap: wrap">
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600"><span style="width: 14px; height: 14px; border-radius: 4px; background: #FFD60A"></span>#FFD60A</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600"><span style="width: 14px; height: 14px; border-radius: 4px; background: #141208; outline: 1px solid #3A372D"></span>#141208</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600"><span style="width: 14px; height: 14px; border-radius: 4px; background: #FF7A1A"></span>#FF7A1A</span>
+<span style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600"><span style="width: 14px; height: 14px; border-radius: 4px; background: #F6F3EA"></span>#F6F3EA</span>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1240,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

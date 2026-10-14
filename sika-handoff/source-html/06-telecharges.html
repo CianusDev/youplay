@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Sika — Téléchargés</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:inherit;text-decoration:none}a:hover{color:#FFD60A}
+.scroll::-webkit-scrollbar{display:none}
+.cv{position:relative;overflow:hidden;flex-shrink:0}
+.cv::before{content:"";position:absolute}
+.c1{background:#FFD60A}.c1::before{width:62%;height:62%;left:19%;top:19%;border-radius:50%;background:#141208}
+.c2{background:#FF7A1A}.c2::before{width:90%;height:90%;left:-25%;bottom:-45%;border-radius:50%;background:#FFD60A}
+.c3{background:#1F3B2D}.c3::before{inset:0;background:repeating-linear-gradient(135deg,#FFD60A 0 8%,transparent 8% 20%)}
+.c4{background:#F1E6C8}.c4::before{width:46%;height:46%;right:12%;top:12%;background:#141208}
+.c5{background:#3A2A55}.c5::before{width:56%;height:56%;left:22%;top:22%;border-radius:50%;border:4px solid #FFD60A;box-sizing:border-box}
+.c6{background:#141208;outline:1px solid #2A271E}.c6::before{width:0;height:0;left:22%;bottom:16%;border-left:14px solid transparent;border-right:14px solid transparent;border-bottom:22px solid #FFD60A}
+.chip{font:600 13px Manrope,sans-serif;padding:0 16px;height:36px;border-radius:18px;border:0;cursor:pointer;white-space:nowrap}
+.ib{width:44px;height:44px;border:0;background:transparent;color:#F6F3EA;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:22px}
+.sw{width:52px;height:32px;border-radius:16px;border:0;position:relative;cursor:pointer;flex-shrink:0;padding:0}
+.sw span{position:absolute;top:4px;width:24px;height:24px;border-radius:12px;transition:left .15s}
+.nav a{display:flex;flex-direction:column;align-items:center;gap:4px;font:600 11px Manrope,sans-serif;color:#A39E8F;min-width:64px;padding:6px 0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #0F0E0B; color: #F6F3EA; font-family: Manrope, sans-serif">
+<div class="scroll" style="position: absolute; inset: 0; overflow-y: auto; padding: 58px 0 190px; box-sizing: border-box">
+
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 10px 0 20px">
+<h1 style="margin: 0; font: 800 30px 'Bricolage Grotesque', sans-serif; letter-spacing: -1px">Téléchargés</h1>
+<button class="ib" aria-label="Paramètres de téléchargement"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"></path><circle cx="16" cy="7" r="2"></circle><circle cx="10" cy="17" r="2"></circle></svg></button>
+</div>
+
+<section style="margin: 16px 20px 0; background: #1A1915; border-radius: 22px; padding: 18px">
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="width: 48px; height: 48px; border-radius: 14px; background: {{offBg}}; color: {{offFg}}; display: flex; align-items: center; justify-content: center; flex-shrink: 0">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 2l20 20M8.5 16.4a5 5 0 0 1 7 0M5 12.9a10 10 0 0 1 5.2-2.8M19 12.9a10 10 0 0 0-2.3-1.7M1.4 9a15 15 0 0 1 4.3-2.7M22.6 9A15 15 0 0 0 10.7 5M12 20h.01"></path></svg>
+</div>
+<div style="flex: 1">
+<label for="offline" style="display: block; font-weight: 800; font-size: 15px">Mode hors ligne</label>
+<div style="font-size: 12px; color: #A39E8F; margin-top: 2px">{{offText}}</div>
+</div>
+<button id="offline" class="sw" role="switch" aria-checked="{{offAria}}" onClick="{{toggleOffline}}" style="background: {{offTrack}}"><span style="left: {{offKnob}}; background: {{offKnobBg}}"></span></button>
+</div>
+<div style="height: 1px; background: #24221C; margin: 16px 0"></div>
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="flex: 1">
+<label for="smart" style="display: block; font-weight: 700; font-size: 14px">Téléchargement intelligent</label>
+<div style="font-size: 12px; color: #A39E8F; margin-top: 2px">Garde tes titres les plus écoutés à jour, en Wi-Fi seulement</div>
+</div>
+<button id="smart" class="sw" role="switch" aria-checked="{{smartAria}}" onClick="{{toggleSmart}}" style="background: {{smartTrack}}"><span style="left: {{smartKnob}}; background: {{smartKnobBg}}"></span></button>
+</div>
+</section>
+
+<section style="margin: 12px 20px 0; padding: 0 2px">
+<div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 700"><span>Stockage</span><span style="color: #A39E8F">[X] Go utilisés · [Y] Go libres</span></div>
+<div role="img" aria-label="Répartition du stockage" style="display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 8px; background: #24221C; gap: 2px">
+<span style="width: 34%; background: #FFD60A"></span><span style="width: 14%; background: #FF7A1A"></span><span style="width: 22%; background: #5A5547"></span>
+</div>
+<div style="display: flex; gap: 14px; margin-top: 8px; font-size: 11px; color: #A39E8F; font-weight: 600">
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #FFD60A"></span>Sika</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #FF7A1A"></span>Podcasts</span>
+<span style="display: flex; align-items: center; gap: 5px"><span style="width: 8px; height: 8px; border-radius: 2px; background: #5A5547"></span>Autres apps</span>
+</div>
+</section>
+
+<div class="scroll" style="display: flex; gap: 8px; padding: 22px 20px 0; overflow-x: auto">
+<sc-for list="{{chips}}" as="c" hint-placeholder-count="4">
+<sc-if value="{{c.on}}" hint-placeholder-val="{{ false }}"><button class="chip" aria-pressed="true" onClick="{{c.pick}}" style="background: #FFD60A; color: #141208">{{c.label}}</button></sc-if>
+<sc-if value="{{c.off}}" hint-placeholder-val="{{ true }}"><button class="chip" aria-pressed="false" onClick="{{c.pick}}" style="background: #24221C; color: #F6F3EA">{{c.label}}</button></sc-if>
+</sc-for>
+</div>
+
+<sc-if value="{{hasActive}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; justify-content: space-between; align-items: center; padding: 18px 20px 4px">
+<h2 style="margin: 0; font: 800 16px 'Bricolage Grotesque', sans-serif">En cours · 2</h2>
+<button style="border: 0; background: transparent; color: #A39E8F; font: 700 12px Manrope, sans-serif; height: 44px; cursor: pointer">Tout mettre en pause</button>
+</div>
+</sc-if>
+
+<ul style="list-style: none; margin: 0; padding: 0">
+<sc-for list="{{items}}" as="it" hint-placeholder-count="7">
+<li><a href="Playlist.dc.html" style="display: flex; align-items: center; gap: 14px; padding: 8px 20px">
+<div class="cv {{it.cv}}" style="width: 56px; height: 56px; border-radius: {{it.radius}}"></div>
+<div style="flex: 1; min-width: 0">
+<div style="font-weight: 700; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{it.title}}</div>
+<div style="font-size: 12px; color: #A39E8F; margin-top: 4px">{{it.meta}}</div>
+<sc-if value="{{it.loading}}" hint-placeholder-val="{{ false }}"><div style="height: 3px; border-radius: 2px; background: #24221C; margin-top: 8px"><div style="width: {{it.pct}}; height: 3px; border-radius: 2px; background: #FFD60A"></div></div></sc-if>
+</div>
+<sc-if value="{{it.ready}}" hint-placeholder-val="{{ true }}"><span role="img" aria-label="Téléchargé" style="width: 24px; height: 24px; border-radius: 12px; background: #FFD60A; display: flex; align-items: center; justify-content: center"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#141208" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 6v10M7.5 12 12 16.5 16.5 12"></path></svg></span></sc-if>
+<sc-if value="{{it.loading}}" hint-placeholder-val="{{ false }}"><span style="font-size: 12px; font-weight: 800; color: #FFD60A">{{it.pct}}</span></sc-if>
+<sc-if value="{{it.queued}}" hint-placeholder-val="{{ false }}"><span style="font-size: 11px; font-weight: 700; color: #A39E8F">En attente</span></sc-if>
+</a></li>
+</sc-for>
+</ul>
+
+<sc-if value="{{empty}}" hint-placeholder-val="{{ false }}">
+<div style="margin: 30px 20px 0; text-align: center; color: #A39E8F; font-size: 14px">Rien ici pour l'instant. Appuie sur <span style="color: #FFD60A; font-weight: 800">↓</span> sur un titre ou une playlist.</div>
+</sc-if>
+</div>
+
+<div style="position: absolute; left: 8px; right: 8px; bottom: 92px; background: #2A271E; border-radius: 14px; overflow: hidden; box-shadow: 0 12px 30px rgba(0,0,0,0.5)">
+<a href="Player.dc.html" style="display: flex; align-items: center; gap: 10px; padding: 8px">
+<div class="cv c2" style="width: 44px; height: 44px; border-radius: 8px"></div>
+<div style="flex: 1; min-width: 0"><div style="font-weight: 700; font-size: 13px">Soleil de Bè</div><div style="font-size: 12px; color: #C9C3B3; display: flex; align-items: center; gap: 6px"><svg width="12" height="12" viewBox="0 0 24 24" fill="#FFD60A" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle></svg>Ama Kodjo · Hors ligne</div></div>
+<span aria-hidden="true" style="width: 44px; height: 44px; border-radius: 22px; background: #FFD60A; color: #141208; display: flex; align-items: center; justify-content: center"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4.5" width="4" height="15" rx="1"></rect><rect x="14" y="4.5" width="4" height="15" rx="1"></rect></svg></span>
+</a>
+<div style="height: 3px; background: rgba(255,255,255,0.12); margin: 0 10px"><div style="width: 38%; height: 3px; background: #FFD60A"></div></div>
+</div>
+
+<nav class="nav" aria-label="Navigation principale" style="position: absolute; left: 0; right: 0; bottom: 0; height: 88px; padding: 8px 12px 22px; box-sizing: border-box; display: flex; justify-content: space-around; background: rgba(15,14,11,0.96); border-top: 1px solid #1F1D17">
+<a href="Main.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"></path></svg>Accueil</a>
+<a href="Search.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>Recherche</a>
+<a href="Library.dc.html"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 4v16M9 4v16M14 4l6 16"></path></svg>Bibliothèque</a>
+<a href="Downloads.dc.html" style="color: #FFD60A"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 7v8.5M8.2 12.2 12 16l3.8-3.8" stroke="#0F0E0B" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>Téléchargés</a>
+</nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(p){ super(p); this.state = { offline: false, smart: true, f: 'Tout' }; }
+  sw(on) {
+    return { track: on ? '#FFD60A' : '#3A372D', knob: on ? '24px' : '4px', knobBg: on ? '#141208' : '#F6F3EA', aria: on ? 'true' : 'false' };
+  }
+  renderVals() {
+    const s = this.state;
+    const all = [
+      { title: 'Harmattan', meta: 'Album · Sena Waves · 10 titres', kind: 'Albums', cv: 'c3', st: 'loading', pct: '64%' },
+      { title: 'Tech en Afrique — Ép. [N]', meta: 'Podcast · 48 min', kind: 'Podcasts', cv: 'c4', st: 'queued' },
+      { title: 'Titres likés', meta: 'Playlist · 318 titres', kind: 'Playlists', cv: 'c1', st: 'ready' },
+      { title: 'Lomé by Night', meta: 'Playlist · 42 titres', kind: 'Playlists', cv: 'c2', st: 'ready' },
+      { title: 'Afro Focus', meta: 'Playlist · 60 titres', kind: 'Playlists', cv: 'c3', st: 'ready' },
+      { title: 'Code & Chill', meta: 'Playlist · 75 titres', kind: 'Playlists', cv: 'c6', st: 'ready' },
+      { title: 'Nuit à Kégué', meta: 'Album · Ama Kodjo · 8 titres', kind: 'Albums', cv: 'c5', st: 'ready' },
+      { title: 'Tech en Afrique — Ép. [N−1]', meta: 'Podcast · 52 min', kind: 'Podcasts', cv: 'c4', st: 'ready' }
+    ];
+    const items = all
+      .filter((x) => s.f === 'Tout' || x.kind === s.f)
+      .map((x) => ({ ...x, pct: x.pct || '', radius: x.kind === 'Podcasts' ? '14px' : '10px',
+        ready: x.st === 'ready', loading: x.st === 'loading', queued: x.st === 'queued' }));
+    const chips = ['Tout', 'Playlists', 'Albums', 'Podcasts'].map((l) => ({ label: l, on: s.f === l, off: s.f !== l, pick: () => this.setState({ f: l }) }));
+    const o = this.sw(s.offline), m = this.sw(s.smart);
+    return {
+      chips, items, empty: items.length === 0,
+      hasActive: items.some((x) => !x.ready),
+      offText: s.offline ? 'Activé · seuls tes téléchargements sont lus' : 'Désactivé · streaming autorisé',
+      offBg: s.offline ? '#FFD60A' : '#24221C', offFg: s.offline ? '#141208' : '#FFD60A',
+      offTrack: o.track, offKnob: o.knob, offKnobBg: o.knobBg, offAria: o.aria,
+      toggleOffline: () => this.setState({ offline: !s.offline }),
+      smartTrack: m.track, smartKnob: m.knob, smartKnobBg: m.knobBg, smartAria: m.aria,
+      toggleSmart: () => this.setState({ smart: !s.smart })
+    };
+  }
+}
+</script>
+</body>
+</html>
