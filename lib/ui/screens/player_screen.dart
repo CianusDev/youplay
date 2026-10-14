@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
@@ -410,13 +411,22 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
     // Pause du suivi pendant 4 s après un défilement manuel (plein écran).
     if (DateTime.now().difference(_userScrolledAt) < const Duration(seconds: 4)) return;
     final ctx = _keys[index].currentContext;
-    if (ctx == null || !mounted) return;
-    Scrollable.ensureVisible(
-      ctx,
-      alignment: widget.compact ? 0.4 : 0.3,
-      duration: animate ? const Duration(milliseconds: 500) : Duration.zero,
-      curve: Curves.easeOutCubic,
-    );
+    if (ctx == null || !mounted || !_ctrl.hasClients) return;
+    // On ne fait défiler QUE la vue des paroles : Scrollable.ensureVisible ferait aussi
+    // défiler la page du lecteur (parent) et ramènerait l'écran sur la carte.
+    final box = ctx.findRenderObject();
+    if (box == null) return;
+    final viewport = RenderAbstractViewport.maybeOf(box);
+    if (viewport == null) return;
+    final target = viewport
+        .getOffsetToReveal(box, widget.compact ? 0.4 : 0.3)
+        .offset
+        .clamp(_ctrl.position.minScrollExtent, _ctrl.position.maxScrollExtent);
+    if (animate) {
+      _ctrl.animateTo(target, duration: const Duration(milliseconds: 500), curve: Curves.easeOutCubic);
+    } else {
+      _ctrl.jumpTo(target);
+    }
   }
 
   @override
