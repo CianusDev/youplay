@@ -8,6 +8,7 @@ import '../../data/youtube_source.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
+import '../../state/playlist_folders.dart';
 import '../../state/providers.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
@@ -75,7 +76,10 @@ final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>(
         eyebrow: 'PLAYLIST',
         meta: _countMeta(lib.userName, p.tracks),
         tracks: p.tracks,
-        description: p.tracks.isEmpty ? 'Ajoute des titres avec « … › Ajouter à une playlist ».' : '',
+        description: [
+          if (DownloadManager.supported) 'Dossier sur le téléphone : ${PlaylistFolders.displayPath(p.name)}',
+          if (p.tracks.isEmpty) 'Ajoute des titres avec « … › Ajouter à une playlist ».',
+        ].join('\n'),
       );
     case CollectionKind.ytquery:
       final t = await ref.watch(ytSongsProvider(c.id).future);
@@ -365,13 +369,20 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               onTap: () => showSikaSheet(context, (ctx) => SafeArea(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       SheetAction(
+                        icon: 'list',
+                        label: 'Renommer',
+                        onTap: () {
+                          Navigator.of(ctx).pop();
+                          renamePlaylistDialog(context, ref, c.id);
+                        },
+                      ),
+                      SheetAction(
                         icon: 'close',
                         label: 'Supprimer la playlist',
                         color: SikaColors.orange,
-                        onTap: () {
+                        onTap: () async {
                           Navigator.of(ctx).pop();
-                          ref.read(libraryProvider.notifier).deletePlaylist(c.id);
-                          context.pop();
+                          if (await confirmDeletePlaylist(context, ref, c.id) && mounted) context.pop();
                         },
                       ),
                       const SizedBox(height: 8),

@@ -8,6 +8,8 @@ import io.flutter.plugin.common.MethodChannel
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.schabi.newpipe.extractor.Image
+import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
@@ -91,7 +93,10 @@ object NewPipeBridge {
     }
 
     private fun handle(call: MethodCall): Any? = when (call.method) {
-        "searchSongs" -> searchSongs(call.argument<String>("query")!!)
+        "searchSongs" -> searchSongs(call.argument<String>("query")!!)["songs"]
+        "searchTop" -> searchSongs(call.argument<String>("query")!!)
+        "searchArtists" -> searchArtists(call.argument<String>("query")!!)
+        "suggestions" -> yt.suggestionExtractor.suggestionList(call.argument<String>("query")!!).take(8)
         "searchVideos" -> search(call.argument<String>("query")!!, YoutubeSearchQueryHandlerFactory.VIDEOS)
         "searchAlbums" -> searchAlbums(call.argument<String>("query")!!)
         "playlist" -> playlist(call.argument<String>("url")!!)
@@ -100,17 +105,114 @@ object NewPipeBridge {
         else -> throw NotImplementedError()
     }
 
+    // ------------------------------------------------------------------------
+    // Recherche « intelligente »
+    // ------------------------------------------------------------------------
+
     /**
-     * Titres : YouTube Music d'abord ; si vide (cas actuel avec l'extracteur v0.26.5),
-     * repli sur la recherche vidéo, filtrée et nettoyée pour ressembler à des titres.
+     * Titres : YouTube Music d'abord ; s'il ne renvoie rien (cas actuel de l'extracteur v0.26.5),
+     * on prend 2 pages de vidéos, on écarte le bruit (reprises, réactions, karaoké…),
+     * on dédoublonne (clip / audio / paroles du même titre) et on trie par pertinence.
+     * Renvoie {songs, suggestion (« Vouliez-vous dire »), corrected}.
      */
-    private fun searchSongs(query: String): List<Map<String, Any?>> {
+    private fun searchSongs(query: String): Map<String, Any?> {
         val music = runCatching { search(query, YoutubeSearchQueryHandlerFactory.MUSIC_SONGS) }.getOrDefault(emptyList())
-        if (music.isNotEmpty()) return music
-        return search(query, YoutubeSearchQueryHandlerFactory.VIDEOS)
-            .filter { it["type"] == "stream" && ((it["duration"] as? Long) ?: 0L) in 60L..900L }
-            .map(::asSong)
+        if (music.isNotEmpty()) return mapOf("songs" to music, "suggestion" to null, "corrected" to false)
+
+        val handler = yt.searchQHFactory.fromQuery(query, listOf(YoutubeSearchQueryHandlerFactory.VIDEOS), "")
+        val info = SearchInfo.getInfo(yt, handler)
+        val raw = info.relatedItems.toMutableList()
+        if (info.hasNextPage()) {
+            runCatching { raw += SearchInfo.getMoreItems(yt, handler, info.nextPage).items }
+        }
+        val q = tokens(query)
+        val best = LinkedHashMap<String, Pair<Double, Map<String, Any?>>>()
+        raw.filterIsInstance<StreamInfoItem>().forEachIndexed { index, it ->
+            val dur = it.duration
+            if (dur !in 60L..900L || it.isShortFormContent) return@forEachIndexed
+            if (it.streamType != StreamType.VIDEO_STREAM) return@forEachIndexed
+            val song = asSong(item(it)!!)
+            val score = scoreSong(q, it, song, index)
+            if (score <= -50) return@forEachIndexed
+            val key = norm(song["artist"] as String) + "|" + norm(song["title"] as String)
+            if ((best[key]?.first ?: Double.NEGATIVE_INFINITY) < score) best[key] = score to song
+        }
+        val songs = best.values.sortedByDescending { it.first }.map { it.second }.take(30)
+        return mapOf(
+            "songs" to songs,
+            "suggestion" to info.searchSuggestion?.takeIf { it.isNotBlank() },
+            "corrected" to info.isCorrectedSearch,
+        )
     }
+
+    private val penalties = listOf(
+        "cover", "reprise", "reaction", "réaction", "react", "karaoke", "karaoké", "instrumental",
+        "remix", "live", "en live", "acoustic", "acoustique", "nightcore", "slowed", "sped up",
+        "speed up", "8d", "1 hour", "1h", "loop", "tuto", "tutorial", "parodie", "parody",
+        "interview", "making of", "behind the scenes", "teaser", "trailer", "extrait", "snippet",
+    )
+    private val officialMarks = listOf("official audio", "audio officiel", "clip officiel", "official video", "official music video", "visualizer")
+
+    private fun scoreSong(q: List<String>, item: StreamInfoItem, song: Map<String, Any?>, index: Int): Double {
+        val title = norm(item.name ?: "")
+        val uploader = item.uploaderName ?: ""
+        val haystack = "$title ${norm(uploader)} ${norm(song["artist"] as String)}"
+        var score = 0.0
+        // Couverture de la requête : mots de la recherche présents dans titre + artiste.
+        if (q.isNotEmpty()) score += 45.0 * q.count { w -> haystack.contains(w) } / q.size
+        // Sources officielles.
+        if (uploader.endsWith(" - Topic")) score += 25
+        if (item.isUploaderVerified) score += 15
+        if (officialMarks.any { mark -> title.contains(norm(mark)) }) score += 10
+        // Popularité (échelle logarithmique) et ordre proposé par YouTube.
+        if (item.viewCount > 0) score += 3.0 * kotlin.math.log10(item.viewCount.toDouble())
+        score += (40 - index).coerceAtLeast(0) * 0.4
+        // Versions non désirées, sauf si la recherche les demande.
+        for (p in penalties) {
+            val np = norm(p)
+            val inTitle = Regex("""(^|\s)${Regex.escape(np)}(\s|$)""").containsMatchIn(title)
+            if (inTitle && q.none { w -> np.contains(w) }) score -= 30
+        }
+        if (title.contains("lyrics") || title.contains("paroles")) score -= 4
+        return score
+    }
+
+    /** Chaînes d'artistes (avec photo), triées par pertinence. */
+    private fun searchArtists(query: String): List<Map<String, Any?>> {
+        val handler = yt.searchQHFactory.fromQuery(query, listOf(YoutubeSearchQueryHandlerFactory.CHANNELS), "")
+        val nq = norm(query)
+        return SearchInfo.getInfo(yt, handler).relatedItems
+            .filterIsInstance<ChannelInfoItem>()
+            .map { c ->
+                val name = cleanArtist(c.name ?: "")
+                val nn = norm(name)
+                var score = 0.0
+                if (nn == nq) score += 60 else if (nn.startsWith(nq) || nq.startsWith(nn)) score += 35 else if (nn.contains(nq)) score += 15
+                if (c.isVerified) score += 25
+                if (c.subscriberCount > 0) score += 4.0 * kotlin.math.log10(c.subscriberCount.toDouble())
+                score to mapOf(
+                    "name" to name,
+                    "url" to c.url,
+                    "thumbnail" to best(c.thumbnails),
+                    "subscribers" to c.subscriberCount,
+                    "verified" to c.isVerified,
+                    "exact" to (nn == nq),
+                )
+            }
+            .filter { it.first > 10 }
+            .sortedByDescending { it.first }
+            .map { it.second }
+            .distinctBy { norm(it["name"] as String) }
+            .take(6)
+    }
+
+    /** Minuscules, sans accents ni ponctuation. */
+    private fun norm(s: String): String = java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
+        .replace(Regex("""\p{M}+"""), "")
+        .replace(Regex("""[^a-z0-9]+"""), " ")
+        .trim()
+
+    private fun tokens(s: String) = norm(s).split(" ").filter { it.length >= 2 }
 
     private fun searchAlbums(query: String): List<Map<String, Any?>> {
         val music = runCatching { search(query, YoutubeSearchQueryHandlerFactory.MUSIC_ALBUMS) }.getOrDefault(emptyList())
@@ -120,13 +222,14 @@ object NewPipeBridge {
     }
 
     private val noise = Regex(
-        """\s*[(\[](?:[^)\]]*(?:clip|official|officiel|video|vidéo|audio|lyrics?|paroles|visuali[sz]er|hd|4k|live)[^)\]]*)[)\]]""",
+        """\s*[(\[](?:[^)\]]*(?:clip|official|officiel|video|vidéo|audio|lyrics?|paroles|visuali[sz]er|hd|4k|prod)[^)\]]*)[)\]]""",
         RegexOption.IGNORE_CASE,
     )
+    private val trailingNoise = Regex("""\s*[|/]\s*(?:clip|official|lyrics?|paroles|audio).*$""", RegexOption.IGNORE_CASE)
 
     /** "DAMSO - Impardonnable (Clip Officiel)" -> artiste "DAMSO", titre "Impardonnable". */
     private fun asSong(m: Map<String, Any?>): Map<String, Any?> {
-        var title = (m["title"] as? String ?: "").replace(noise, "").trim()
+        var title = (m["title"] as? String ?: "").replace(noise, "").replace(trailingNoise, "").trim()
         var artist = m["artist"] as? String ?: ""
         val dash = Regex("""\s+[-–—|]\s+""").find(title)
         if (dash != null) {
@@ -192,12 +295,17 @@ object NewPipeBridge {
         else -> null
     }
 
-    private fun cleanArtist(s: String?) = (s ?: "").removeSuffix(" - Topic").trim()
+    /** "DamsoVEVO" → "Damso", "Tiakola - Topic" → "Tiakola", "Gims Officiel" → "Gims". */
+    private fun cleanArtist(s: String?) = (s ?: "")
+        .removeSuffix(" - Topic")
+        .replace(Regex("""VEVO$"""), "")
+        .replace(Regex("""\s+(official|officiel|music|musique)$""", RegexOption.IGNORE_CASE), "")
+        .trim()
 
     private fun best(images: List<Image>): String? {
         val url = images.maxByOrNull { it.height }?.url ?: return null
         // Miniatures YouTube Music : demander une taille carrée plus grande.
-        return url.replace(Regex("=w\\d+-h\\d+"), "=w544-h544")
+        return url.replace(Regex("=w\\d+-h\\d+"), "=w544-h544").replace(Regex("=s\\d+-"), "=s240-")
     }
 
     private fun watchUrl(id: String) = "https://www.youtube.com/watch?v=$id"

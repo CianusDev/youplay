@@ -223,10 +223,32 @@ class LibraryStore extends Notifier<LibraryState> {
 
   MyPlaylist createPlaylist(String name) {
     final id = '${DateTime.now().millisecondsSinceEpoch}${Random().nextInt(999)}';
-    final p = MyPlaylist(id: id, name: name.trim().isEmpty ? 'Ma playlist n°${state.myPlaylists.length + 1}' : name.trim(), tracks: const []);
+    // Nom unique (insensible à la casse) : chaque playlist a son propre dossier sur le téléphone.
+    var base = name.trim().isEmpty ? 'Ma playlist n°${state.myPlaylists.length + 1}' : name.trim();
+    final taken = state.myPlaylists.map((p) => p.name.toLowerCase()).toSet();
+    var unique = base;
+    for (var i = 2; taken.contains(unique.toLowerCase()); i++) {
+      unique = '$base ($i)';
+    }
+    final p = MyPlaylist(id: id, name: unique, tracks: const []);
     _set(state.copyWith(myPlaylists: [p, ...state.myPlaylists], addedAt: _stamp('mine:$id')));
     return p;
   }
+
+  /// Nom libre pour une playlist (unique, insensible à la casse). Retourne le nom retenu.
+  String uniquePlaylistName(String wanted, {String? exceptId}) {
+    final base = wanted.trim().isEmpty ? 'Ma playlist' : wanted.trim();
+    final taken = state.myPlaylists.where((p) => p.id != exceptId).map((p) => p.name.toLowerCase()).toSet();
+    var unique = base;
+    for (var i = 2; taken.contains(unique.toLowerCase()); i++) {
+      unique = '$base ($i)';
+    }
+    return unique;
+  }
+
+  void renamePlaylist(String id, String name) => _set(state.copyWith(myPlaylists: [
+        for (final p in state.myPlaylists) if (p.id == id) p.copyWith(name: name) else p,
+      ]));
 
   void deletePlaylist(String id) => _set(state.copyWith(myPlaylists: state.myPlaylists.where((p) => p.id != id).toList()));
 

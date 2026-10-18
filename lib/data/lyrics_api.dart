@@ -9,19 +9,35 @@ class LyricLine {
 }
 
 class Lyrics {
-  const Lyrics(this.lines, {required this.synced});
+  const Lyrics(this.lines, {required this.synced, this.id, this.sourceDuration, this.trackDuration});
   final List<LyricLine> lines;
   final bool synced;
+  final int? id; // identifiant LRCLIB (pour « mauvaises paroles »)
+  final Duration? sourceDuration; // durée de la version minutée
+  final Duration? trackDuration; // durée du titre lu
+
+  /// Écart de durée entre le titre lu (souvent un clip) et la version minutée.
+  Duration get durationGap => (trackDuration == null || sourceDuration == null) ? Duration.zero : trackDuration! - sourceDuration!;
+
+  /// Vrai si le titre lu est sensiblement plus long/court : intro/outro de clip, synchro incertaine.
+  bool get approximate => synced && durationGap.inMilliseconds.abs() > 4000;
 
   /// Index de la ligne en cours pour une position donnée.
   int indexAt(Duration position) {
     if (!synced) return 0;
     var idx = 0;
     for (var i = 0; i < lines.length; i++) {
-      if (lines[i].time! <= position) idx = i;
+      if (lines[i].time! <= position) {
+        idx = i;
+      } else {
+        break;
+      }
     }
     return idx;
   }
+
+  Lyrics withTrackDuration(Duration d) =>
+      Lyrics(lines, synced: synced, id: id, sourceDuration: sourceDuration, trackDuration: d);
 }
 
 /// Paroles via LRCLIB (https://lrclib.net) : base libre et gratuite, sans clé.
@@ -31,25 +47,37 @@ class LyricsApi {
 
   static const _headers = {'User-Agent': 'YouPlay (usage personnel)'};
 
-  /// 1. correspondance exacte (rapide) ; 2. recherche floue, car les durées des clips YouTube
-  /// diffèrent souvent de la version audio et `/api/get` exige ±2 s.
-  Future<Lyrics?> fetch({required String artist, required String title, required Duration duration}) async {
+  /// 1. correspondance exacte (artiste + titre + durée ±2 s) ; 2. recherche floue stricte.
+  /// `exclude` = enregistrements LRCLIB signalés comme mauvais par l'utilisateur pour ce titre.
+  Future<Lyrics?> fetch({
+    required String artist,
+    required String title,
+    required Duration duration,
+    Set<int> exclude = const {},
+  }) async {
     final t = cleanTitle(title);
+    Lyrics? done(Map<String, dynamic> rec) => _fromRecord(rec)?.withTrackDuration(duration);
     try {
       final exact = await _getJson(Uri.https('lrclib.net', '/api/get', {
         'artist_name': artist,
         'track_name': t,
         if (duration.inSeconds > 0) 'duration': '${duration.inSeconds}',
       }));
-      if (exact is Map<String, dynamic>) {
-        final l = _fromRecord(exact);
+      if (exact is Map<String, dynamic> && !exclude.contains(exact['id'])) {
+        final l = done(exact);
         if (l != null) return l;
       }
+      final seen = <int>{};
+      final pool = <Map<String, dynamic>>[];
       for (final q in ['$artist $t', t]) {
         final res = await _getJson(Uri.https('lrclib.net', '/api/search', {'q': q}));
-        if (res is! List || res.isEmpty) continue;
-        final best = _best(res.cast<Map<String, dynamic>>(), artist: artist, title: t, duration: duration);
-        if (best != null) return _fromRecord(best);
+        if (res is! List) continue;
+        for (final r in res.cast<Map<String, dynamic>>()) {
+          final id = r['id'] as int?;
+          if (id != null && seen.add(id) && !exclude.contains(id)) pool.add(r);
+        }
+        final best = _best(pool, artist: artist, title: t, duration: duration);
+        if (best != null) return done(best);
       }
     } catch (_) {
       // Réseau indisponible ou réponse invalide : pas de paroles.
@@ -83,32 +111,36 @@ class LyricsApi {
       .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
       .trim();
 
-  /// Choisit le meilleur résultat ; refuse s'il n'y a pas de vraie correspondance de titre
-  /// (mieux vaut « indisponible » que les paroles d'une autre chanson).
+  /// Choisit le meilleur résultat. Règles (mieux vaut « indisponible » que les paroles d'un autre son) :
+  /// - le titre doit correspondre (identique, ou l'un contient l'autre s'il fait au moins 5 caractères) ;
+  /// - l'artiste doit correspondre, SAUF titre identique ET durée à ±3 s ;
+  /// - au-delà de ±45 s d'écart de durée, c'est une autre version (live, remix, mix) : refusé.
   static Map<String, dynamic>? _best(List<Map<String, dynamic>> items,
       {required String artist, required String title, required Duration duration}) {
     final nt = _norm(title), na = _norm(artist);
+    final artistWords = na.split(' ').where((w) => w.length >= 3).toList();
     Map<String, dynamic>? best;
-    var bestScore = -1;
+    var bestScore = -1.0;
     for (final it in items) {
       final ct = _norm(cleanTitle(it['trackName'] as String? ?? ''));
       final ca = _norm(it['artistName'] as String? ?? '');
       if (ct.isEmpty || nt.isEmpty) continue;
-      final titleOk = ct == nt || ct.contains(nt) || nt.contains(ct);
+      final titleExact = ct == nt;
+      final titleOk = titleExact || (nt.length >= 5 && ct.length >= 5 && (ct.contains(nt) || nt.contains(ct)));
       if (!titleOk) continue;
-      final artistOk = ca.isNotEmpty && na.isNotEmpty && (ca.contains(na) || na.contains(ca));
+      // L'artiste YouTube vaut parfois « Damso, Hamza » ou une chaîne : on accepte un mot commun significatif.
+      final artistOk = ca.isNotEmpty &&
+          na.isNotEmpty &&
+          (ca.contains(na) || na.contains(ca) || artistWords.any((w) => ca.split(' ').contains(w)));
       final synced = (it['syncedLyrics'] as String?)?.trim().isNotEmpty == true;
       final plain = (it['plainLyrics'] as String?)?.trim().isNotEmpty == true;
       if (!synced && !plain) continue;
-      final diff = ((it['duration'] as num?)?.toDouble() ?? 0) - duration.inSeconds;
-      var score = (ct == nt ? 3 : 1) + (artistOk ? 4 : 0) + (synced ? 3 : 0);
-      if (diff.abs() <= 5) {
-        score += 2;
-      } else if (diff.abs() <= 20) {
-        score += 1;
-      }
-      // Sans l'artiste, on n'accepte qu'un titre identique (titres courts trop ambigus).
-      if (!artistOk && ct != nt) continue;
+      final recDur = (it['duration'] as num?)?.toDouble() ?? 0;
+      final diff = duration.inSeconds > 0 && recDur > 0 ? (recDur - duration.inSeconds).abs() : 999.0;
+      if (!artistOk && !(titleExact && diff <= 3)) continue;
+      if (diff > 45 && diff != 999.0) continue;
+      var score = (titleExact ? 30.0 : 10.0) + (artistOk ? 40.0 : 0.0) + (synced ? 15.0 : 0.0);
+      score -= diff == 999.0 ? 10.0 : diff.clamp(0, 45) * 0.8; // la version la plus proche en durée gagne
       if (score > bestScore) {
         bestScore = score;
         best = it;
@@ -118,13 +150,20 @@ class LyricsApi {
   }
 
   Lyrics? _fromRecord(Map<String, dynamic> j) {
+    final id = j['id'] as int?;
+    final dur = (j['duration'] as num?) == null ? null : Duration(milliseconds: ((j['duration'] as num) * 1000).round());
     final synced = j['syncedLyrics'] as String?;
-    if (synced != null && synced.trim().isNotEmpty) return _parseLrc(synced);
+    if (synced != null && synced.trim().isNotEmpty) {
+      final l = _parseLrc(synced);
+      return l == null ? null : Lyrics(l.lines, synced: true, id: id, sourceDuration: dur);
+    }
     final plain = j['plainLyrics'] as String?;
     if (plain != null && plain.trim().isNotEmpty) {
       return Lyrics(
         plain.split('\n').where((l) => l.trim().isNotEmpty).map((l) => LyricLine(null, l.trim())).toList(),
         synced: false,
+        id: id,
+        sourceDuration: dur,
       );
     }
     return null;

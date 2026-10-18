@@ -7,6 +7,7 @@ import '../../data/models.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
+import '../../state/playlist_folders.dart';
 import '../../theme/sika_tokens.dart';
 import '../nav_utils.dart';
 import 'cover_art.dart';
@@ -293,7 +294,7 @@ Future<void> showAddToPlaylist(BuildContext context, WidgetRef ref, Track t) {
               if (name == null) return;
               final p = ref.read(libraryProvider.notifier).createPlaylist(name);
               ref.read(libraryProvider.notifier).addToPlaylist(p.id, t);
-              if (context.mounted) showSnack(context, 'Ajouté à « ${p.name} »');
+              if (context.mounted) showSnack(context, 'Ajouté à « ${p.name} » · ${PlaylistFolders.displayPath(p.name)}');
             },
           ),
           for (final p in mine)
@@ -303,7 +304,7 @@ Future<void> showAddToPlaylist(BuildContext context, WidgetRef ref, Track t) {
               onTap: () {
                 ref.read(libraryProvider.notifier).addToPlaylist(p.id, t);
                 Navigator.of(ctx).pop();
-                showSnack(context, 'Ajouté à « ${p.name} »');
+                showSnack(context, 'Ajouté à « ${p.name} » · ${PlaylistFolders.displayPath(p.name)}');
               },
             ),
           const SizedBox(height: 8),
@@ -341,4 +342,79 @@ Future<String?> askText(BuildContext context, String title, String hint, {String
       ],
     ),
   );
+}
+
+/// Supprime une playlist perso, en proposant de supprimer aussi son dossier sur le téléphone.
+/// Retourne true si la playlist a été supprimée.
+Future<bool> confirmDeletePlaylist(BuildContext context, WidgetRef ref, String playlistId) async {
+  final p = ref.read(libraryProvider).myPlaylists.where((x) => x.id == playlistId).firstOrNull;
+  if (p == null) return false;
+  var withFolder = true;
+  final ok = await showDialog<bool>(
+    context: context,
+    useRootNavigator: true,
+    builder: (ctx) => StatefulBuilder(
+      builder: (ctx, setState) => AlertDialog(
+        backgroundColor: SikaColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SikaRadius.xl)),
+        title: Text('Supprimer « ${p.name} » ?', style: SikaText.display(20, w: FontWeight.w800)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('La playlist sera retirée de ta bibliothèque.', style: SikaText.ui(14, color: SikaColors.textSoft)),
+            if (DownloadManager.supported) ...[
+              const SizedBox(height: 12),
+              CheckboxListTile(
+                value: withFolder,
+                onChanged: (v) => setState(() => withFolder = v ?? false),
+                contentPadding: EdgeInsets.zero,
+                activeColor: SikaColors.yellow,
+                checkColor: SikaColors.onYellow,
+                controlAffinity: ListTileControlAffinity.leading,
+                title: Text('Supprimer aussi le dossier', style: SikaText.ui(14, w: FontWeight.w700)),
+                subtitle: Text(
+                  '${PlaylistFolders.displayPath(p.name)} — tes fichiers ajoutés à la main sont conservés',
+                  style: SikaText.meta,
+                ),
+              ),
+            ],
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: Text('Annuler', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text('Supprimer', style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.orange)),
+          ),
+        ],
+      ),
+    ),
+  );
+  if (ok != true) return false;
+  ref.read(libraryProvider.notifier).deletePlaylist(playlistId);
+  if (withFolder && DownloadManager.supported) {
+    final kept = await ref.read(playlistFoldersProvider).deleteFolder(p.name);
+    if (context.mounted) {
+      showSnack(context, kept > 0 ? 'Playlist supprimée · $kept fichier(s) perso conservé(s) dans le dossier' : 'Playlist et dossier supprimés');
+    }
+  } else if (context.mounted) {
+    showSnack(context, 'Playlist supprimée · dossier conservé');
+  }
+  return true;
+}
+
+/// Renomme une playlist perso (et déplace son dossier sur le téléphone).
+Future<void> renamePlaylistDialog(BuildContext context, WidgetRef ref, String playlistId) async {
+  final p = ref.read(libraryProvider).myPlaylists.where((x) => x.id == playlistId).firstOrNull;
+  if (p == null) return;
+  final v = await askText(context, 'Renommer la playlist', 'Nom de la playlist', initial: p.name);
+  if (v == null || v.trim().isEmpty || v.trim() == p.name) return;
+  final name = await ref.read(playlistFoldersProvider).renamePlaylist(playlistId, v);
+  if (context.mounted) {
+    showSnack(context, DownloadManager.supported ? 'Renommée « $name » · ${PlaylistFolders.displayPath(name)}' : 'Renommée « $name »');
+  }
 }

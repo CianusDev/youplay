@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:permission_handler/permission_handler.dart';
+
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
@@ -42,6 +44,7 @@ class _SettingsSheet extends ConsumerWidget {
                 subtitle: 'Ne lire que les titres téléchargés',
                 trailing: SikaSwitch(value: dl.offlineMode, label: 'Mode hors ligne', onChanged: ref.read(downloadsProvider.notifier).setOffline),
               ),
+            if (DownloadManager.supported) const _BackgroundPlaybackRow(),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -79,4 +82,41 @@ class _Row extends StatelessWidget {
           trailing,
         ]),
       );
+}
+
+/// MIUI / HyperOS coupe les apps en arrière-plan pour économiser la batterie, ce qui arrête la musique.
+class _BackgroundPlaybackRow extends StatefulWidget {
+  const _BackgroundPlaybackRow();
+  @override
+  State<_BackgroundPlaybackRow> createState() => _BackgroundPlaybackRowState();
+}
+
+class _BackgroundPlaybackRowState extends State<_BackgroundPlaybackRow> {
+  bool? _granted;
+
+  @override
+  void initState() {
+    super.initState();
+    Permission.ignoreBatteryOptimizations.isGranted.then((v) {
+      if (mounted) setState(() => _granted = v);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final ok = _granted == true;
+    return _Row(
+      title: 'Lecture en arrière-plan',
+      subtitle: ok ? 'Aucune restriction de batterie' : 'Évite que le téléphone coupe la musique',
+      trailing: ok
+          ? Text('Activé', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow))
+          : TextButton(
+              onPressed: () async {
+                final r = await Permission.ignoreBatteryOptimizations.request();
+                if (mounted) setState(() => _granted = r.isGranted);
+              },
+              child: Text('Autoriser', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+            ),
+    );
+  }
 }

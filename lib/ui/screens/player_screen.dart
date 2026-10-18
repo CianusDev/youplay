@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter/rendering.dart' show RenderAbstractViewport;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,7 @@ import '../components/cover_art.dart';
 import '../components/play_button.dart';
 import '../components/sika_icon.dart';
 import '../components/waveform_seek_bar.dart';
+import 'lyrics_share_sheet.dart';
 
 String _sourceLabel(CollectionRef? s) {
   if (s == null) return 'LECTURE EN COURS';
@@ -309,7 +311,7 @@ class _LyricsCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final key = LyricsKey(track.artist.name, track.title, track.duration);
+    final key = LyricsKey(track.id, track.artist.name, track.title, track.duration);
     final lyrics = ref.watch(lyricsProvider(key));
     const ink = SikaColors.onYellow;
     final other = SikaText.lyricsOther.copyWith(color: ink.withValues(alpha: 0.4));
@@ -332,7 +334,7 @@ class _LyricsCard extends ConsumerWidget {
             stops: [0, 0.14, 0.82, 1],
           ).createShader(r),
           blendMode: BlendMode.dstIn,
-          child: _LyricsView(key: ValueKey(track.id), lyrics: l, compact: true),
+          child: _LyricsView(key: ValueKey('${track.id}-${l.id}'), lyrics: l, trackId: track.id, track: track, compact: true),
         ),
       );
     }
@@ -345,7 +347,31 @@ class _LyricsCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Expanded(child: Text('Paroles', style: SikaText.display(17, color: ink))),
+              Text('Paroles', style: SikaText.display(17, color: ink)),
+              const SizedBox(width: 10),
+              // Clip plus long que la version minutée et pas encore réglé : on le signale.
+              if (l != null && l.approximate && ref.watch(lyricsOffsetProvider(track.id)) == Duration.zero)
+                GestureDetector(
+                  onTap: () => _showFullLyrics(context, l),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(color: const Color(0x1F141208), borderRadius: BorderRadius.circular(8)),
+                    child: Text('Synchro approx. · régler', style: SikaText.ui(10, w: FontWeight.w800, color: ink)),
+                  ),
+                ),
+              const Spacer(),
+              if (l != null) ...[
+                IconButtonSika(
+                  icon: 'share',
+                  label: 'Partager des paroles',
+                  size: 36,
+                  iconSize: 17,
+                  color: ink,
+                  background: const Color(0x1F141208),
+                  onTap: () => showLyricsShare(context, track: track, lyrics: l),
+                ),
+                const SizedBox(width: 8),
+              ],
               if (l != null)
                 IconButtonSika(
                   icon: 'expand',
@@ -376,7 +402,112 @@ class _LyricsCard extends ConsumerWidget {
         expand: false,
         initialChildSize: 0.9,
         maxChildSize: 0.95,
-        builder: (ctx, scroll) => _LyricsView(lyrics: l, controller: scroll),
+        builder: (ctx, scroll) => Column(
+          children: [
+            _LyricsControls(track: track, lyrics: l),
+            Expanded(child: _LyricsView(lyrics: l, trackId: track.id, track: track, controller: scroll)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Réglages des paroles (feuille plein écran) : décalage, alignement sur le clip, signalement.
+class _LyricsControls extends ConsumerWidget {
+  const _LyricsControls({required this.track, required this.lyrics});
+  final Track track;
+  final Lyrics lyrics;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const ink = SikaColors.onYellow;
+    final offset = ref.watch(lyricsOffsetProvider(track.id));
+    final prefs = ref.read(lyricsPrefsProvider.notifier);
+    final gap = lyrics.durationGap;
+    String fmt(Duration d) {
+      final v = d.inMilliseconds / 1000;
+      return '${v > 0 ? '+' : ''}${v.toStringAsFixed(1).replaceAll('.', ',')} s';
+    }
+
+    Widget step(String label, Duration delta) => Material(
+          color: const Color(0x1F141208),
+          shape: const StadiumBorder(),
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: () => prefs.setOffset(track.id, offset + delta),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Text(label, style: SikaText.ui(13, w: FontWeight.w800, color: ink)),
+            ),
+          ),
+        );
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (lyrics.synced)
+            Row(
+              children: [
+                Text('Décalage', style: SikaText.ui(13, w: FontWeight.w700, color: ink)),
+                const Spacer(),
+                step('−0,5 s', const Duration(milliseconds: -500)),
+                SizedBox(
+                  width: 72,
+                  child: GestureDetector(
+                    onTap: () => prefs.setOffset(track.id, Duration.zero),
+                    child: Text(
+                      offset == Duration.zero ? '0 s' : fmt(offset),
+                      textAlign: TextAlign.center,
+                      style: SikaText.ui(14, w: FontWeight.w800, color: ink),
+                    ),
+                  ),
+                ),
+                step('+0,5 s', const Duration(milliseconds: 500)),
+              ],
+            ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              // Clip plus long : l'écart est le plus souvent une intro avant le premier couplet.
+              if (lyrics.approximate && gap > Duration.zero && offset != gap)
+                ActionChip(
+                  backgroundColor: SikaColors.onYellow,
+                  side: BorderSide.none,
+                  label: Text('Aligner sur le clip (${fmt(gap)})', style: SikaText.ui(12, w: FontWeight.w800, color: SikaColors.yellow)),
+                  onPressed: () => prefs.setOffset(track.id, gap),
+                ),
+              ActionChip(
+                backgroundColor: const Color(0x1F141208),
+                side: BorderSide.none,
+                avatar: const Icon(Icons.ios_share_rounded, size: 16, color: ink),
+                label: Text('Partager des paroles', style: SikaText.ui(12, w: FontWeight.w800, color: ink)),
+                onPressed: () => showLyricsShare(context, track: track, lyrics: lyrics),
+              ),
+              if (lyrics.id != null)
+                ActionChip(
+                  backgroundColor: const Color(0x1F141208),
+                  side: BorderSide.none,
+                  label: Text('Ce ne sont pas les bonnes paroles', style: SikaText.ui(12, w: FontWeight.w800, color: ink)),
+                  onPressed: () {
+                    prefs.reject(track.id, lyrics.id!);
+                    Navigator.of(context).pop();
+                    showSnack(context, 'Recherche d\'autres paroles…');
+                  },
+                ),
+            ],
+          ),
+          if (lyrics.synced)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text('Astuce : touche une ligne pour y sauter, appui long pour la partager.',
+                  style: SikaText.ui(11, color: ink.withValues(alpha: 0.6))),
+            ),
+        ],
       ),
     );
   }
@@ -385,8 +516,10 @@ class _LyricsCard extends ConsumerWidget {
 /// Paroles défilantes : ligne en cours animée et suivie automatiquement.
 /// `compact` = carte du lecteur (pas de défilement manuel) ; sinon feuille plein écran.
 class _LyricsView extends ConsumerStatefulWidget {
-  const _LyricsView({super.key, required this.lyrics, this.controller, this.compact = false});
+  const _LyricsView({super.key, required this.lyrics, required this.trackId, this.track, this.controller, this.compact = false});
   final Lyrics lyrics;
+  final String trackId;
+  final Track? track;
   final ScrollController? controller;
   final bool compact;
 
@@ -433,7 +566,9 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
   Widget build(BuildContext context) {
     final l = widget.lyrics;
     final pos = ref.watch(positionProvider).value ?? Duration.zero;
-    final cur = l.synced ? l.indexAt(pos) : -1;
+    // Décalage choisi par l'utilisateur + 250 ms d'anticipation (la ligne s'allume juste avant d'être chantée).
+    final offset = ref.watch(lyricsOffsetProvider(widget.trackId));
+    final cur = l.synced ? l.indexAt(pos - offset + const Duration(milliseconds: 250)) : -1;
     if (cur != _current) {
       final first = _current == -1;
       _current = cur;
@@ -458,11 +593,18 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
             for (var i = 0; i < l.lines.length; i++)
               GestureDetector(
                 key: _keys[i],
+                onLongPress: widget.track == null
+                    ? null
+                    : () {
+                        HapticFeedback.mediumImpact();
+                        showLyricsShare(context, track: widget.track!, lyrics: l, initialLine: i);
+                      },
                 onTap: l.lines[i].time == null
                     ? null
                     : () {
                         _userScrolledAt = DateTime.fromMillisecondsSinceEpoch(0);
-                        ref.read(playerProvider.notifier).seek(l.lines[i].time!);
+                        final at = l.lines[i].time! + ref.read(lyricsOffsetProvider(widget.trackId));
+                        ref.read(playerProvider.notifier).seek(at < Duration.zero ? Duration.zero : at);
                       },
                 child: Padding(
                   padding: EdgeInsets.symmetric(vertical: compact ? 3 : 5),

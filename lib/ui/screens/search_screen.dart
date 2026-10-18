@@ -11,6 +11,8 @@ import '../../state/providers.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
 import '../components/rows.dart';
+import '../components/tiles.dart';
+import '../components/cover_art.dart';
 import '../components/sika_chip.dart';
 import '../components/sika_icon.dart';
 
@@ -48,7 +50,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   final _ctrl = TextEditingController();
   final _focus = FocusNode();
   Timer? _debounce;
-  String _query = '';
+  Timer? _suggestDebounce;
+  String _query = ''; // requête des résultats (après une pause ou validation)
+  String _typed = ''; // texte en cours de frappe (suggestions)
 
   @override
   void initState() {
@@ -59,27 +63,43 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _suggestDebounce?.cancel();
     _ctrl.dispose();
     _focus.dispose();
     super.dispose();
   }
 
   void _onChanged(String v) {
+    // Suggestions quasi instantanées, résultats complets après une vraie pause de frappe.
+    _suggestDebounce?.cancel();
+    _suggestDebounce = Timer(const Duration(milliseconds: 150), () => setState(() => _typed = v.trim()));
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 250), () => setState(() => _query = v.trim()));
+    _debounce = Timer(const Duration(milliseconds: 700), () => setState(() => _query = v.trim()));
     setState(() {});
   }
 
+  /// Lance la recherche tout de suite (validation clavier, suggestion, recherche récente).
   void _searchFor(String q) {
+    q = q.trim();
+    if (q.isEmpty) return;
+    _debounce?.cancel();
+    _suggestDebounce?.cancel();
     _ctrl.text = q;
     _ctrl.selection = TextSelection.collapsed(offset: q.length);
-    setState(() => _query = q);
+    _focus.unfocus();
+    setState(() {
+      _query = q;
+      _typed = q;
+    });
     ref.read(libraryProvider.notifier).addSearch(q);
   }
 
   void _clear() {
     _ctrl.clear();
-    setState(() => _query = '');
+    setState(() {
+      _query = '';
+      _typed = '';
+    });
   }
 
   @override
@@ -114,7 +134,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         controller: _ctrl,
                         focusNode: _focus,
                         onChanged: _onChanged,
-                        onSubmitted: (v) => ref.read(libraryProvider.notifier).addSearch(v),
+                        onSubmitted: _searchFor,
                         textInputAction: TextInputAction.search,
                         cursorColor: SikaColors.onYellow,
                         style: SikaText.ui(15, w: FontWeight.w600, color: SikaColors.onYellow),
@@ -145,8 +165,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 ),
               ),
             ),
+            if (focused && _typed.isNotEmpty && YoutubeSource.supported)
+              _Suggestions(query: _typed, onPick: _searchFor),
             if (searching)
-              _Results(query: _query, onCommit: () => ref.read(libraryProvider.notifier).addSearch(_query))
+              _Results(query: _query, onCommit: () => ref.read(libraryProvider.notifier).addSearch(_query), onSearch: _searchFor)
             else ...[
               _RecentSearches(onTap: _searchFor),
               if (!focused) ...[
@@ -306,101 +328,238 @@ class _GenreTile extends StatelessWidget {
 }
 
 class _Results extends StatelessWidget {
-  const _Results({required this.query, required this.onCommit});
+  const _Results({required this.query, required this.onCommit, required this.onSearch});
   final String query;
   final VoidCallback onCommit;
+  final ValueChanged<String> onSearch;
 
   @override
   Widget build(BuildContext context) => YoutubeSource.supported
-      ? _YtResults(query: query, onCommit: onCommit)
+      ? _YtResults(query: query, onCommit: onCommit, onSearch: onSearch)
       : const EmptyState('La recherche YouTube fonctionne dans l\'app Android.');
 }
 
-/// Résultats YouTube Music : titres, artistes, albums.
-class _YtResults extends ConsumerWidget {
-  const _YtResults({required this.query, required this.onCommit});
+String _norm(String s) => s
+    .toLowerCase()
+    .replaceAll(RegExp(r'[àâäá]'), 'a')
+    .replaceAll(RegExp(r'[éèêë]'), 'e')
+    .replaceAll(RegExp(r'[îïí]'), 'i')
+    .replaceAll(RegExp(r'[ôöó]'), 'o')
+    .replaceAll(RegExp(r'[ùûüú]'), 'u')
+    .replaceAll('ç', 'c')
+    .replaceAll(RegExp(r'[^a-z0-9]+'), ' ')
+    .trim();
+
+/// Suggestions de saisie (autocomplétion YouTube), affichées pendant la frappe.
+class _Suggestions extends ConsumerWidget {
+  const _Suggestions({required this.query, required this.onPick});
   final String query;
-  final VoidCallback onCommit;
+  final ValueChanged<String> onPick;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final songs = ref.watch(ytSongsProvider(query));
+    final list = ref.watch(ytSuggestionsProvider(query)).value ?? const <String>[];
+    if (list.isEmpty) return const SizedBox(height: 8);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Column(
+        children: [
+          for (final sug in list.take(6))
+            InkWell(
+              onTap: () => onPick(sug),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                child: Row(
+                  children: [
+                    const SikaIcon('search', size: 18, color: SikaColors.textMuted),
+                    const SizedBox(width: 14),
+                    Expanded(child: Text(sug, maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.ui(15, w: FontWeight.w600))),
+                    const SikaIcon('chevron-right', size: 18, color: SikaColors.textMuted),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Résultats YouTube : meilleur résultat, titres, artistes, albums.
+class _YtResults extends ConsumerWidget {
+  const _YtResults({required this.query, required this.onCommit, required this.onSearch});
+  final String query;
+  final VoidCallback onCommit;
+  final ValueChanged<String> onSearch;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final search = ref.watch(ytSearchProvider(query));
+    final artists = ref.watch(ytArtistsProvider(query)).value ?? const <Artist>[];
     final albums = ref.watch(ytAlbumsProvider(query));
     final current = ref.watch(playerProvider.select((s) => s.current?.id));
     final playing = ref.watch(playerProvider.select((s) => s.playing));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        AsyncView<List<Track>>(
-          value: songs,
-          onRetry: () => ref.invalidate(ytSongsProvider(query)),
-          data: (t) {
-            if (t.isEmpty) return EmptyState('Aucun titre YouTube pour « $query ».');
-            final seen = <String>{};
-            final artists = [for (final x in t) if (seen.add(x.artist.id)) x.artist].take(4).toList();
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SectionLabel('Titres'),
-                for (final (i, x) in t.take(12).indexed)
-                  TrackRow(
-                    index: i + 1,
-                    title: x.title,
-                    meta: x.artist.name,
-                    duration: formatDuration(x.duration),
-                    seed: x.id,
-                    imageUrl: x.artworkUrl,
-                    current: current == x.id,
-                    playing: playing,
-                    onTap: () {
-                      onCommit();
-                      playTracks(context, ref, t, start: i, source: CollectionRef(CollectionKind.ytquery, query, title: ''));
-                    },
-                    onMore: () => showTrackOptions(context, ref, x),
-                  ),
-                const SectionLabel('Artistes'),
-                for (final a in artists)
-                  LibraryRow(
-                    title: a.name,
-                    meta: 'Artiste',
-                    seed: a.id,
-                    imageUrl: t.firstWhere((x) => x.artist.id == a.id).artworkUrl,
-                    circle: true,
-                    size: 52,
-                    onTap: () {
-                      onCommit();
-                      openArtist(context, a);
-                    },
-                  ),
-              ],
-            );
-          },
-        ),
-        AsyncView<List<Playlist>>(
-          value: albums,
-          loading: const SizedBox.shrink(),
-          data: (p) => p.isEmpty
-              ? const SizedBox.shrink()
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SectionLabel('Albums'),
-                    for (final x in p.take(6))
-                      LibraryRow(
-                        title: x.name,
-                        meta: 'Album · ${x.owner.name}',
-                        seed: x.id,
-                        imageUrl: x.artworkUrl,
-                        size: 52,
-                        onTap: () {
-                          onCommit();
-                          openCollection(context, playlistRef(x));
-                        },
-                      ),
-                  ],
+    final nq = _norm(query);
+    // L'artiste est le meilleur résultat si son nom correspond à la recherche.
+    final topArtist = artists.where((a) => _norm(a.name) == nq || (nq.length >= 4 && _norm(a.name).startsWith(nq))).firstOrNull;
+
+    void openA(Artist a) {
+      onCommit();
+      openArtist(context, a);
+    }
+
+    return AsyncView<YtSearch>(
+      value: search,
+      onRetry: () => ref.invalidate(ytSearchProvider(query)),
+      data: (res) {
+        final t = res.songs;
+        if (t.isEmpty && artists.isEmpty) return EmptyState('Aucun résultat pour « $query ».');
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (res.suggestion != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: GestureDetector(
+                  onTap: res.corrected ? null : () => onSearch(res.suggestion!),
+                  child: Text.rich(TextSpan(children: [
+                    TextSpan(text: res.corrected ? 'Résultats pour ' : 'Vouliez-vous dire ', style: SikaText.meta),
+                    TextSpan(text: res.suggestion, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+                    if (!res.corrected) TextSpan(text: ' ?', style: SikaText.meta),
+                  ])),
                 ),
+              ),
+            // Meilleur résultat
+            const SectionLabel('Meilleur résultat'),
+            if (topArtist != null)
+              _BestCard(
+                title: topArtist.name,
+                subtitle: topArtist.followers > 0 ? 'Artiste · ${formatCount(topArtist.followers)} abonnés' : 'Artiste',
+                imageUrl: topArtist.imageUrl,
+                seed: topArtist.id,
+                circle: true,
+                onTap: () => openA(topArtist),
+              )
+            else if (t.isNotEmpty)
+              _BestCard(
+                title: t.first.title,
+                subtitle: 'Titre · ${t.first.artist.name}',
+                imageUrl: t.first.artworkUrl,
+                seed: t.first.id,
+                onTap: () {
+                  onCommit();
+                  playTracks(context, ref, t, source: CollectionRef(CollectionKind.ytquery, query, title: ''));
+                },
+              ),
+            if (t.isNotEmpty) ...[
+              const SectionLabel('Titres'),
+              for (final (i, x) in t.take(10).indexed)
+                TrackRow(
+                  index: i + 1,
+                  title: x.title,
+                  meta: x.artist.name,
+                  duration: formatDuration(x.duration),
+                  seed: x.id,
+                  imageUrl: x.artworkUrl,
+                  current: current == x.id,
+                  playing: playing,
+                  onTap: () {
+                    onCommit();
+                    playTracks(context, ref, t, start: i, source: CollectionRef(CollectionKind.ytquery, query, title: ''));
+                  },
+                  onMore: () => showTrackOptions(context, ref, x),
+                ),
+            ],
+            if (artists.isNotEmpty) ...[
+              const SectionLabel('Artistes'),
+              SizedBox(
+                height: 124,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  itemCount: artists.length,
+                  separatorBuilder: (_, _) => const SizedBox(width: 16),
+                  itemBuilder: (_, i) => ArtistBubble(
+                    name: artists[i].name,
+                    seed: artists[i].id,
+                    imageUrl: artists[i].imageUrl,
+                    onTap: () => openA(artists[i]),
+                  ),
+                ),
+              ),
+            ],
+            AsyncView<List<Playlist>>(
+              value: albums,
+              loading: const SizedBox.shrink(),
+              data: (p) => p.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SectionLabel('Albums et playlists'),
+                        for (final x in p.take(6))
+                          LibraryRow(
+                            title: x.name,
+                            meta: '${x.isAlbum ? 'Album' : 'Playlist'} · ${x.owner.name}',
+                            seed: x.id,
+                            imageUrl: x.artworkUrl,
+                            size: 52,
+                            onTap: () {
+                              onCommit();
+                              openCollection(context, playlistRef(x));
+                            },
+                          ),
+                      ],
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Grande carte « Meilleur résultat ».
+class _BestCard extends StatelessWidget {
+  const _BestCard({required this.title, required this.subtitle, required this.seed, required this.onTap, this.imageUrl, this.circle = false});
+  final String title;
+  final String subtitle;
+  final String seed;
+  final String? imageUrl;
+  final bool circle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Material(
+        color: SikaColors.surface,
+        borderRadius: BorderRadius.circular(SikaRadius.lg),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                CoverArt.seeded(seed, size: 84, radius: SikaRadius.md, circle: circle, imageUrl: imageUrl),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: SikaText.display(20, ls: -0.4)),
+                      const SizedBox(height: 6),
+                      Text(subtitle, maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.meta),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-      ],
+      ),
     );
   }
 }

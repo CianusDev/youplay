@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter/widgets.dart' show AppLifecycleListener;
+import 'package:audio_session/audio_session.dart';
+import 'package:flutter/widgets.dart' show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:just_audio_background/just_audio_background.dart';
@@ -66,7 +67,8 @@ class PlayerUi {
 }
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
-  final p = AudioPlayer();
+  // Interruptions (appels, autres apps) gérées à la main par PlayerController : plus fiable sur MIUI.
+  final p = AudioPlayer(handleInterruptions: false);
   ref.onDispose(p.dispose);
   return p;
 });
@@ -83,6 +85,13 @@ class PlayerController extends Notifier<PlayerUi> {
   bool _loadingRadio = false;
   Timer? _saveTimer;
   Duration? _restoredPosition; // position restaurée, tant que la lecture n'a pas repris
+  Duration _lastPos = Duration.zero; // dernière position connue (l'erreur remet parfois à 0)
+  final _retries = <String, int>{}; // réessais par titre après une erreur de lecture
+  bool _recovering = false;
+  // Interruption (appel…) : reprendre à la fin si on jouait.
+  bool _resumeAfterInterruption = false;
+  DateTime? _interruptedAt;
+  Timer? _focusPoll;
   AppLifecycleListener? _lifecycle;
 
   static const _sessionKey = 'youplay.session.v1';
@@ -93,13 +102,18 @@ class PlayerController extends Notifier<PlayerUi> {
     // Reprise : dernière session restaurée au démarrage (en pause, à la bonne position).
     Future.microtask(_restore);
     _lifecycle = AppLifecycleListener(onPause: _save, onHide: _save, onDetach: _save);
+    _setupAudioSession();
     _subs
       ..add(_p.playerStateStream.listen((s) {
         final buffering = s.processingState == ProcessingState.loading || s.processingState == ProcessingState.buffering;
         if (s.playing && !_listen.isRunning) _listen.start();
         if (!s.playing && _listen.isRunning) _flushListen();
         // Position sauvegardée toutes les 5 s pendant la lecture, et à chaque pause.
-        if (s.playing && s.processingState == ProcessingState.ready) _restoredPosition = null;
+        if (s.playing && s.processingState == ProcessingState.ready) {
+          _restoredPosition = null;
+          final cur = state.current;
+          if (cur != null) _retries.remove(cur.id); // le titre joue : compteur remis à zéro
+        }
         if (s.playing) {
           _saveTimer ??= Timer.periodic(const Duration(seconds: 5), (_) => _save());
         } else {
@@ -118,19 +132,134 @@ class PlayerController extends Notifier<PlayerUi> {
         state = state.copyWith(index: i);
         ref.read(libraryProvider.notifier).recordPlay(state.queue[i]);
         _save();
+        _prefetchNext();
         _maybeExtendRadio();
       }))
-      ..add(_p.errorStream.listen((e) {
-        state = state.copyWith(error: 'Lecture impossible : ${e.message ?? 'erreur réseau'}');
-      }));
+      ..add(_p.positionStream.listen((p) {
+        if (p > Duration.zero) _lastPos = p;
+      }))
+      ..add(_p.errorStream.listen(_onError));
     ref.onDispose(() {
       for (final s in _subs) {
         s.cancel();
       }
       _saveTimer?.cancel();
+      _focusPoll?.cancel();
       _lifecycle?.dispose();
     });
     return const PlayerUi();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Robustesse : erreurs de lecture, préchargement, interruptions
+  // ---------------------------------------------------------------------------
+
+  bool get _inForeground => WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed;
+
+  /// Erreur de source : on réessaie 2 fois au même endroit (URL renouvelée), puis on passe au suivant.
+  /// La lecture ne s'arrête plus net, et aucun message ne s'affiche si l'app est en arrière-plan.
+  Future<void> _onError(PlayerException e) async {
+    final cur = state.current;
+    if (cur == null || _recovering) return;
+    _recovering = true;
+    try {
+      final idx = state.index;
+      final pos = _lastPos;
+      final n = (_retries[cur.id] ?? 0) + 1;
+      _retries[cur.id] = n;
+      ref.read(youtubeProvider).invalidate(cur.id);
+      await Future<void>.delayed(Duration(milliseconds: 800 * n));
+      if (n <= 2) {
+        await _reload(idx, pos);
+      } else if (idx + 1 < state.queue.length) {
+        if (_inForeground) state = state.copyWith(error: '« ${cur.title} » est illisible, titre suivant');
+        await _reload(idx + 1, Duration.zero);
+      } else {
+        if (_inForeground) state = state.copyWith(error: 'Lecture impossible : ${e.message ?? 'erreur réseau'}');
+      }
+    } catch (_) {
+      // Rien de plus à tenter : on laisse le lecteur en pause.
+    } finally {
+      _recovering = false;
+    }
+  }
+
+  /// Recharge la file à partir d'un titre/position (après une erreur, le lecteur est inactif).
+  Future<void> _reload(int index, Duration position) async {
+    final q = state.queue;
+    if (q.isEmpty) return;
+    final i = index.clamp(0, q.length - 1);
+    await _p.setShuffleModeEnabled(state.shuffle);
+    await _p.setAudioSources(q.map(_source).toList(), initialIndex: i, initialPosition: position);
+    if (state.shuffle) await _p.shuffle();
+    await _p.play();
+  }
+
+  /// Résout l'URL du titre suivant pendant la lecture : transition instantanée, même écran éteint.
+  void _prefetchNext() {
+    final next = state.index + 1;
+    if (next < state.queue.length) ref.read(youtubeProvider).prefetch(state.queue[next].id);
+  }
+
+  Future<void> _setupAudioSession() async {
+    try {
+      final session = await AudioSession.instance;
+      await session.configure(const AudioSessionConfiguration.music());
+      _subs
+        ..add(session.interruptionEventStream.listen((ev) {
+          if (ev.begin) {
+            if (ev.type == AudioInterruptionType.duck) {
+              _p.setVolume(0.3);
+            } else if (_p.playing) {
+              // `pause` = perte temporaire (appel, alarme, note vocale) : on reprendra.
+              // `unknown` = une autre app a pris le son pour de bon (vidéo, autre lecteur) : pas de reprise.
+              _p.pause();
+              if (ev.type != AudioInterruptionType.pause) return;
+              _resumeAfterInterruption = true;
+              _interruptedAt = DateTime.now();
+              // Sur MIUI, la fin d'un appel n'est pas toujours signalée : on redemande le focus audio
+              // régulièrement (Android le refuse pendant un appel) et on reprend dès qu'il est rendu.
+              _focusPoll?.cancel();
+              _focusPoll = Timer.periodic(const Duration(seconds: 2), (_) => _tryResume(session));
+            }
+          } else {
+            if (ev.type == AudioInterruptionType.duck) {
+              _p.setVolume(1);
+            } else {
+              _resume();
+            }
+          }
+        }))
+        // Casque débranché / Bluetooth coupé : pause (comme Spotify), sans reprise automatique.
+        ..add(session.becomingNoisyEventStream.listen((_) {
+          _resumeAfterInterruption = false;
+          _p.pause();
+        }));
+    } catch (_) {}
+  }
+
+  Future<void> _tryResume(AudioSession session) async {
+    final since = _interruptedAt;
+    if (!_resumeAfterInterruption || since == null || DateTime.now().difference(since) > const Duration(minutes: 30)) {
+      _focusPoll?.cancel();
+      _focusPoll = null;
+      _resumeAfterInterruption = false;
+      return;
+    }
+    if (DateTime.now().difference(since) < const Duration(seconds: 3)) return;
+    try {
+      if (await session.setActive(true)) _resume();
+    } catch (_) {}
+  }
+
+  void _resume() {
+    _focusPoll?.cancel();
+    _focusPoll = null;
+    if (!_resumeAfterInterruption) return;
+    _resumeAfterInterruption = false;
+    final since = _interruptedAt;
+    // Après 30 min, on considère que l'écoute est terminée.
+    if (since != null && DateTime.now().difference(since) < const Duration(minutes: 30)) _p.play();
   }
 
   // ---------------------------------------------------------------------------
@@ -252,6 +381,7 @@ class PlayerController extends Notifier<PlayerUi> {
       if (sh) await _p.shuffle();
       _p.play();
       _save();
+      _prefetchNext();
     } catch (e) {
       state = state.copyWith(error: 'Lecture impossible : $e');
       return 'Lecture impossible';
@@ -289,9 +419,17 @@ class PlayerController extends Notifier<PlayerUi> {
     }
   }
 
-  void toggle() => _p.playing ? _p.pause() : _p.play();
-  void play() => _p.play();
-  void pause() => _p.pause();
+  void toggle() => _p.playing ? pause() : play();
+  void play() {
+    _resumeAfterInterruption = false;
+    _p.play();
+  }
+
+  void pause() {
+    _resumeAfterInterruption = false;
+    _focusPoll?.cancel();
+    _p.pause();
+  }
 
   Future<void> next() async {
     if (_p.hasNext) {

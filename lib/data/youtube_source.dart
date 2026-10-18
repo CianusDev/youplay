@@ -1,5 +1,6 @@
 // StreamAudioSource est marqué expérimental dans just_audio, mais stable en pratique.
 // ignore_for_file: experimental_member_use
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,14 @@ class ResolvedStream {
   bool get fresh => DateTime.now().difference(at) < const Duration(hours: 3);
 }
 
+/// Résultat d'une recherche de titres : liste triée + correction éventuelle de la requête.
+class YtSearch {
+  const YtSearch(this.songs, {this.suggestion, this.corrected = false});
+  final List<Track> songs;
+  final String? suggestion; // « Vouliez-vous dire … »
+  final bool corrected; // YouTube a déjà cherché la version corrigée
+}
+
 /// Catalogue YouTube / YouTube Music via NewPipeExtractor (canal natif Android).
 /// Usage personnel uniquement : contourne les conditions d'utilisation de YouTube.
 class YoutubeSource {
@@ -36,6 +45,32 @@ class YoutubeSource {
   final _cache = <String, ResolvedStream>{};
 
   Future<List<Track>> searchSongs(String query) => _tracks('searchSongs', {'query': query});
+  /// Titres triés par pertinence (sans doublons) + « Vouliez-vous dire ».
+  Future<YtSearch> searchTop(String query) async {
+    final m = (await _ch.invokeMapMethod<String, dynamic>('searchTop', {'query': query}))!;
+    final songs = (m['songs'] as List).cast<Map>().map((e) => e.cast<String, dynamic>()).where((e) => e['type'] == 'stream').map(_track).toList();
+    return YtSearch(songs, suggestion: m['suggestion'] as String?, corrected: m['corrected'] as bool? ?? false);
+  }
+
+  /// Chaînes d'artistes (avec photo), triées par pertinence.
+  Future<List<Artist>> searchArtists(String query) async {
+    final raw = await _ch.invokeListMethod<Map>('searchArtists', {'query': query}) ?? const [];
+    return raw.map((m) => m.cast<String, dynamic>()).map((m) {
+      final name = m['name'] as String? ?? 'Artiste';
+      return Artist(
+        id: '$ytArtistPrefix${name.toLowerCase()}',
+        name: name,
+        handle: m['verified'] == true ? 'verified' : '',
+        imageUrl: m['thumbnail'] as String?,
+        followers: (m['subscribers'] as num?)?.toInt() ?? 0,
+      );
+    }).toList();
+  }
+
+  /// Suggestions de saisie (autocomplétion YouTube).
+  Future<List<String>> suggestions(String query) async =>
+      (await _ch.invokeListMethod<String>('suggestions', {'query': query})) ?? const [];
+
   Future<List<Track>> searchVideos(String query) => _tracks('searchVideos', {'query': query});
   Future<List<Track>> related(String trackId) => _tracks('related', {'id': videoIdOf(trackId)});
 
@@ -95,20 +130,44 @@ class YoutubeSource {
         isAlbum: true,
       );
 
-  /// Ouvre un flux HTTP (avec Range) vers l'audio d'un titre, en renouvelant l'URL si elle a expiré.
-  Future<http.StreamedResponse> open(String trackId, {int? start, int? end, http.Client? client}) async {
+  /// Oublie l'URL en cache d'un titre (expirée / refusée) : la prochaine lecture en résout une neuve.
+  void invalidate(String trackId) => _cache.remove(trackId);
+
+  /// Résout à l'avance l'URL d'un titre (le suivant de la file) : transition sans attente ni échec.
+  Future<void> prefetch(String trackId) async {
+    if (!isYoutubeTrack(trackId)) return;
+    try {
+      await resolve(trackId);
+    } catch (_) {}
+  }
+
+  /// Ouvre un flux HTTP (avec Range) vers l'audio d'un titre. Réessaie sur coupure réseau,
+  /// et renouvelle l'URL si YouTube la refuse (403/410 : URL expirée).
+  Future<http.StreamedResponse> open(String trackId, {int? start, int? end, http.Client? client, bool force = false}) async {
     final c = client ?? http.Client();
-    for (var attempt = 0; attempt < 2; attempt++) {
-      final s = await resolve(trackId, force: attempt > 0);
-      final req = http.Request('GET', Uri.parse(s.url));
-      if (s.userAgent.isNotEmpty) req.headers['User-Agent'] = s.userAgent;
-      req.headers['Range'] = 'bytes=${start ?? 0}-${end != null ? end - 1 : ''}';
-      final res = await c.send(req);
-      if (res.statusCode == 200 || res.statusCode == 206) return res;
-      await res.stream.drain<void>();
-      if (res.statusCode != 403 && res.statusCode != 410) throw http.ClientException('HTTP ${res.statusCode}');
+    Object? lastError;
+    for (var attempt = 0; attempt < 4; attempt++) {
+      try {
+        final s = await resolve(trackId, force: force || attempt >= 2);
+        final req = http.Request('GET', Uri.parse(s.url));
+        if (s.userAgent.isNotEmpty) req.headers['User-Agent'] = s.userAgent;
+        req.headers['Range'] = 'bytes=${start ?? 0}-${end != null ? end - 1 : ''}';
+        final res = await c.send(req).timeout(const Duration(seconds: 20));
+        if (res.statusCode == 200 || res.statusCode == 206) return res;
+        await res.stream.drain<void>();
+        lastError = http.ClientException('HTTP ${res.statusCode}');
+        if (res.statusCode == 403 || res.statusCode == 410) {
+          invalidate(trackId);
+          force = true;
+        } else if (res.statusCode < 500 && res.statusCode != 429) {
+          break; // erreur définitive
+        }
+      } catch (e) {
+        lastError = e; // réseau coupé, délai dépassé, extraction impossible…
+      }
+      await Future<void>.delayed(Duration(milliseconds: 600 * (attempt + 1)));
     }
-    throw http.ClientException('Flux YouTube refusé (403)');
+    throw lastError ?? http.ClientException('Flux YouTube indisponible');
   }
 }
 
@@ -121,17 +180,41 @@ class YoutubeAudioSource extends StreamAudioSource {
 
   @override
   Future<StreamAudioResponse> request([int? start, int? end]) async {
-    final res = await yt.open(trackId, start: start, end: end, client: _client);
+    final from = start ?? 0;
+    final res = await yt.open(trackId, start: from, end: end, client: _client);
     int? total;
     final range = res.headers['content-range']; // "bytes 0-999/12345"
     if (range != null && range.contains('/')) total = int.tryParse(range.split('/').last);
-    total ??= res.contentLength != null ? (start ?? 0) + res.contentLength! : null;
+    total ??= res.contentLength != null ? from + res.contentLength! : null;
     return StreamAudioResponse(
       sourceLength: total,
       contentLength: res.contentLength,
-      offset: start ?? 0,
-      stream: res.stream,
+      offset: from,
+      stream: _resilient(res, from, end ?? total),
       contentType: res.headers['content-type'] ?? (await yt.resolve(trackId)).mime,
     );
+  }
+
+  /// Si la connexion casse ou se bloque en cours de route, on se reconnecte à l'octet près
+  /// (Range) au lieu de remonter une erreur qui arrêterait la lecture.
+  Stream<List<int>> _resilient(http.StreamedResponse first, int start, int? end) async* {
+    var pos = start;
+    var res = first;
+    var retries = 0;
+    while (true) {
+      try {
+        await for (final chunk in res.stream.timeout(const Duration(seconds: 20))) {
+          pos += chunk.length;
+          retries = 0;
+          yield chunk;
+        }
+        return;
+      } catch (_) {
+        if (end != null && pos >= end) return;
+        if (++retries > 5) rethrow;
+        await Future<void>.delayed(Duration(milliseconds: 700 * retries));
+        res = await yt.open(trackId, start: pos, end: end, client: _client, force: retries > 2);
+      }
+    }
   }
 }

@@ -68,7 +68,16 @@ flutter pub get
 flutter run                      # appareil branché
 ```
 
-Pour compiler l'APK release, environ 22 Mo :
+Pour compiler la release et la copier directement sur le téléphone branché en USB :
+
+```bash
+./build.sh               # build release + copie dans Téléchargements/YouPlay.apk
+./build.sh --skip-build  # recopie le dernier APK compilé
+```
+
+Le script choisit l'APK adapté au processeur du téléphone. On l'installe ensuite depuis le gestionnaire de fichiers, car MIUI bloque souvent `adb install`.
+
+Pour compiler l'APK release à la main, environ 22 Mo :
 
 ```bash
 flutter build apk --release --split-per-abi

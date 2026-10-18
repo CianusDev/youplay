@@ -307,12 +307,21 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               ),
             if (i.ref.kind == CollectionKind.mine)
               SheetAction(
+                icon: 'list',
+                label: 'Renommer',
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  renamePlaylistDialog(context, ref, i.ref.id);
+                },
+              ),
+            if (i.ref.kind == CollectionKind.mine)
+              SheetAction(
                 icon: 'close',
                 label: 'Supprimer la playlist',
                 color: SikaColors.orange,
                 onTap: () {
-                  ref.read(libraryProvider.notifier).deletePlaylist(i.ref.id);
                   Navigator.of(ctx).pop();
+                  confirmDeletePlaylist(context, ref, i.ref.id);
                 },
               ),
             const SizedBox(height: 8),

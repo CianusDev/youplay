@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Petite icône de notification (barre d'état) : égaliseur du logo, monochrome.
+     Une icône adaptative (mipmap/ic_launcher) n'est pas valide ici : la notification serait masquée. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path android:fillColor="#FFFFFFFF" android:pathData="M4.5,10.5h2.4a0.6,0.6 0 0 1 0.6,0.6v7.8a0.6,0.6 0 0 1 -0.6,0.6h-2.4a0.6,0.6 0 0 1 -0.6,-0.6v-7.8a0.6,0.6 0 0 1 0.6,-0.6z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M9.3,4.5h2.4a0.6,0.6 0 0 1 0.6,0.6v13.8a0.6,0.6 0 0 1 -0.6,0.6h-2.4a0.6,0.6 0 0 1 -0.6,-0.6v-13.8a0.6,0.6 0 0 1 0.6,-0.6z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M14.1,13.5h2.4a0.6,0.6 0 0 1 0.6,0.6v4.8a0.6,0.6 0 0 1 -0.6,0.6h-2.4a0.6,0.6 0 0 1 -0.6,-0.6v-4.8a0.6,0.6 0 0 1 0.6,-0.6z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M18.9,8.1h2.4a0.6,0.6 0 0 1 0.6,0.6v10.2a0.6,0.6 0 0 1 -0.6,0.6h-2.4a0.6,0.6 0 0 1 -0.6,-0.6v-10.2a0.6,0.6 0 0 1 0.6,-0.6z"/>
+</vector>

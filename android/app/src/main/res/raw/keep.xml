@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Les ressources référencées par nom depuis Dart ne doivent pas être supprimées par le shrinker. -->
+<resources xmlns:tools="http://schemas.android.com/tools" tools:keep="@drawable/ic_stat_youplay" />

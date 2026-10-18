@@ -11,3 +11,10 @@
 -dontwarn com.google.re2j.**
 -dontwarn org.jsoup.**
 -keep class org.jsoup.** { *; }
+
+# Lecture en arrière-plan : service audio + notification média (audio_service / just_audio).
+-keep class com.ryanheise.** { *; }
+-keep class androidx.media.** { *; }
+-keep class androidx.media3.** { *; }
+-keep class android.support.v4.media.** { *; }
+-dontwarn com.ryanheise.**
