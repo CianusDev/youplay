@@ -1,13 +1,13 @@
 """Génère les images du logo YouPlay (icône d'app, premier plan adaptatif, splash).
 
-Logo : fond jaune doux, disque noir, triangle « lecture » blanc aux coins arrondis.
+Logo : fond jaune (couleur primaire de l'app), disque noir, triangle « lecture » blanc aux coins arrondis.
 Usage : python3 tools/make_icons.py   (écrit dans assets/branding/)
 """
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-YELLOW = (0xFF, 0xE8, 0x78, 255)  # SikaColors.yellowSoft
+YELLOW = (0xFF, 0xD6, 0x0A, 255)  # SikaColors.yellow (couleur primaire)
 INK = (0x14, 0x12, 0x08, 255)      # SikaColors.onYellow
 WHITE = (255, 255, 255, 255)
 CLEAR = (0, 0, 0, 0)

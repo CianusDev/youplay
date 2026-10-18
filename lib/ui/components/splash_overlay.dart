@@ -55,7 +55,7 @@ class _SplashOverlayState extends State<SplashOverlay> with SingleTickerProvider
                       child: Transform.scale(
                         scale: 1 + 0.18 * Curves.easeOutBack.transform(_ctrl.value),
                         // Taille et forme du splash Android 12+ (cercle 160 dp, logo au centre).
-                        child: const YouPlayLogo(size: 160, background: SikaColors.yellowSoft, round: true),
+                        child: const YouPlayLogo(size: 160, background: SikaColors.yellow, round: true),
                       ),
                     ),
                   ),
