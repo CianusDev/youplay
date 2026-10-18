@@ -12,6 +12,7 @@ import 'router.dart';
 import 'state/playlist_folders.dart';
 import 'state/providers.dart';
 import 'theme/sika_tokens.dart';
+import 'ui/components/splash_overlay.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,6 +54,7 @@ class SikaApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: sikaTheme(),
       routerConfig: router,
+      builder: (context, child) => SplashOverlay(child: child ?? const SizedBox.shrink()),
     );
   }
 }
