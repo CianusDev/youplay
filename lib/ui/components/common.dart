@@ -160,9 +160,12 @@ class SheetAction extends StatelessWidget {
 /// Feuille d'options d'un titre.
 Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {String? removeFromPlaylistId}) {
   return showSikaSheet(context, (ctx) {
-    return Consumer(builder: (ctx, ref, _) {
-      final liked = ref.watch(libraryProvider.select((s) => s.isLiked(t.id)));
-      final dl = ref.watch(downloadsProvider.select((s) => s.items[t.id]?.status));
+    // `sheetRef` ne sert qu'à l'affichage : il meurt avec la feuille. Les actions utilisent le `ref`
+    // de l'écran appelant, toujours valide après la fermeture de la feuille (sinon : « Cannot use
+    // ref after the widget was disposed » et « Ajouter à une playlist » ne s'ouvrait jamais).
+    return Consumer(builder: (ctx, sheetRef, _) {
+      final liked = sheetRef.watch(libraryProvider.select((s) => s.isLiked(t.id)));
+      final dl = sheetRef.watch(downloadsProvider.select((s) => s.items[t.id]?.status));
       void done(String msg) {
         Navigator.of(ctx).pop();
         showSnack(context, msg);
