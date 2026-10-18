@@ -26,7 +26,9 @@ done
 # --- adb ---------------------------------------------------------------------
 ADB="$(command -v adb || true)"
 for sdk in "${ANDROID_HOME:-}" "${ANDROID_SDK_ROOT:-}" "$HOME/Android/Sdk"; do
-  [[ -z "$ADB" && -n "$sdk" && -x "$sdk/platform-tools/adb" ]] && ADB="$sdk/platform-tools/adb"
+  if [[ -z "$ADB" && -n "$sdk" && -x "$sdk/platform-tools/adb" ]]; then
+    ADB="$sdk/platform-tools/adb"
+  fi
 done
 if [[ -z "$ADB" ]]; then
   echo "✗ adb introuvable (installe platform-tools ou définis ANDROID_HOME)." >&2
