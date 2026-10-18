@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 
 import '../../theme/sika_tokens.dart';
 
-/// Logo YouPlay : disque sombre + triangle « lecture » blanc aux coins arrondis.
+/// Logo YouPlay : disque sombre + triangle « lecture » jaune (couleur primaire) aux coins arrondis.
 /// `background` : fond carré arrondi (icône d'app) ; null = disque seul.
 class YouPlayLogo extends StatelessWidget {
-  const YouPlayLogo({super.key, this.size = 24, this.background, this.round = false, this.disc = SikaColors.onYellow, this.play = Colors.white});
+  const YouPlayLogo({super.key, this.size = 24, this.background, this.round = false, this.disc = SikaColors.onYellow, this.play = SikaColors.yellow});
   final double size;
   final Color? background;
   /// Fond rond plutôt que carré arrondi (forme du splash Android 12+).

@@ -1,6 +1,6 @@
 """Génère les images du logo YouPlay (icône d'app, premier plan adaptatif, splash).
 
-Logo : fond jaune (couleur primaire de l'app), disque noir, triangle « lecture » blanc aux coins arrondis.
+Logo : fond jaune (couleur primaire de l'app), disque noir, triangle « lecture » jaune aux coins arrondis.
 Usage : python3 tools/make_icons.py   (écrit dans assets/branding/)
 """
 from pathlib import Path
@@ -9,7 +9,6 @@ from PIL import Image, ImageDraw
 
 YELLOW = (0xFF, 0xD6, 0x0A, 255)  # SikaColors.yellow (couleur primaire)
 INK = (0x14, 0x12, 0x08, 255)      # SikaColors.onYellow
-WHITE = (255, 255, 255, 255)
 CLEAR = (0, 0, 0, 0)
 SS = 4  # suréchantillonnage (anticrénelage)
 OUT = Path(__file__).resolve().parent.parent / 'assets' / 'branding'
@@ -53,7 +52,7 @@ def draw_mark(d, size, scale=1.0):
     w = h * 0.88             # largeur (pointe vers la droite)
     ox = rd * 0.07           # décalage optique vers la droite
     pts = [(c - w / 2 + ox, c - h / 2), (c - w / 2 + ox, c + h / 2), (c + w / 2 + ox, c)]
-    rounded_triangle(d, pts, rd * 0.13, WHITE)
+    rounded_triangle(d, pts, rd * 0.13, YELLOW)
 
 
 def render(size, bg, scale=1.0, rounded=False):
