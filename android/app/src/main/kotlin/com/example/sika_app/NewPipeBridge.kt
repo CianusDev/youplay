@@ -227,16 +227,29 @@ object NewPipeBridge {
     )
     private val trailingNoise = Regex("""\s*[|/]\s*(?:clip|official|lyrics?|paroles|audio).*$""", RegexOption.IGNORE_CASE)
 
-    /** "DAMSO - Impardonnable (Clip Officiel)" -> artiste "DAMSO", titre "Impardonnable". */
+    private val featRegex = Regex("""\s*[(\[]?\s*(?:ft\.?|feat\.?|featuring)\s+([^)\]]+?)\s*[)\]]?\s*$""", RegexOption.IGNORE_CASE)
+
+    /**
+     * "Naza (ft. SDM) - Tout donner (Clip Officiel)" → artiste "Naza", titre "Tout donner (feat. SDM)".
+     * "DAMSO - Impardonnable (Clip Officiel)" → artiste "DAMSO", titre "Impardonnable".
+     */
     private fun asSong(m: Map<String, Any?>): Map<String, Any?> {
-        var title = (m["title"] as? String ?: "").replace(noise, "").replace(trailingNoise, "").trim()
+        val original = m["title"] as? String ?: ""
+        var title = original.replace(noise, "").replace(trailingNoise, "").trim()
         var artist = m["artist"] as? String ?: ""
         val dash = Regex("""\s+[-–—|]\s+""").find(title)
         if (dash != null) {
             artist = title.substring(0, dash.range.first).trim()
             title = title.substring(dash.range.last + 1).trim()
         }
-        return m + mapOf("title" to title.ifEmpty { m["title"] }, "artist" to artist)
+        // Invités : retirés du nom d'artiste et du titre, puis remis proprement en fin de titre.
+        val feats = mutableListOf<String>()
+        featRegex.find(artist)?.let { feats += it.groupValues[1].trim(); artist = artist.substring(0, it.range.first).trim() }
+        featRegex.find(title)?.let { feats += it.groupValues[1].trim(); title = title.substring(0, it.range.first).trim() }
+        title = title.replace(noise, "").replace(trailingNoise, "").trim().trim('-', '–', '|', ' ')
+        if (feats.isNotEmpty() && title.isNotEmpty()) title = "$title (feat. ${feats.distinct().joinToString(", ")})"
+        if (artist.isEmpty()) artist = cleanArtist(m["artist"] as? String)
+        return m + mapOf("title" to title.ifEmpty { original }, "artist" to artist)
     }
 
     private fun search(query: String, filter: String): List<Map<String, Any?>> {

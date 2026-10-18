@@ -413,7 +413,49 @@ class _LyricsCard extends ConsumerWidget {
   }
 }
 
-/// Réglages des paroles (feuille plein écran) : décalage, alignement sur le clip, signalement.
+/// Bouton pilule sur fond jaune (lisible quel que soit le thème Material).
+class _Pill extends StatelessWidget {
+  const _Pill({required this.label, required this.onTap, this.icon, this.strong = false, this.semantics});
+  final String label;
+  final IconData? icon;
+  final VoidCallback onTap;
+  final bool strong; // action mise en avant : fond noir, texte jaune
+  final String? semantics;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = strong ? SikaColors.yellow : SikaColors.onYellow;
+    return Semantics(
+      button: true,
+      label: semantics ?? label,
+      child: Material(
+        color: strong ? SikaColors.onYellow : const Color(0x1F141208),
+        shape: const StadiumBorder(),
+        child: InkWell(
+          customBorder: const StadiumBorder(),
+          onTap: onTap,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: 40, minWidth: 40),
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: label.isEmpty ? 10 : 14),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) Icon(icon, size: 18, color: fg),
+                  if (icon != null && label.isNotEmpty) const SizedBox(width: 6),
+                  if (label.isNotEmpty) Text(label, style: SikaText.ui(13, w: FontWeight.w800, color: fg)),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// En-tête de la feuille plein écran : poignée, titre, actions (partager, signaler, fermer)
+/// et réglage du décalage sur une seule ligne compacte.
 class _LyricsControls extends ConsumerWidget {
   const _LyricsControls({required this.track, required this.lyrics});
   final Track track;
@@ -430,83 +472,111 @@ class _LyricsControls extends ConsumerWidget {
       return '${v > 0 ? '+' : ''}${v.toStringAsFixed(1).replaceAll('.', ',')} s';
     }
 
-    Widget step(String label, Duration delta) => Material(
-          color: const Color(0x1F141208),
-          shape: const StadiumBorder(),
-          child: InkWell(
-            customBorder: const StadiumBorder(),
-            onTap: () => prefs.setOffset(track.id, offset + delta),
+    void report() {
+      showSikaSheet(context, (ctx) => SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Text(label, style: SikaText.ui(13, w: FontWeight.w800, color: ink)),
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Mauvaises paroles ?', style: SikaText.h2Small),
+                  const SizedBox(height: 6),
+                  Text('On écarte ce texte pour ce titre et on cherche une autre version.', style: SikaText.meta),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size(0, 48),
+                        backgroundColor: SikaColors.yellow,
+                        foregroundColor: SikaColors.onYellow,
+                        shape: const StadiumBorder(),
+                      ),
+                      onPressed: () {
+                        prefs.reject(track.id, lyrics.id!);
+                        Navigator.of(ctx).pop();
+                        Navigator.of(context).pop();
+                        showSnack(context, 'Recherche d\'autres paroles…');
+                      },
+                      child: Text('Chercher d\'autres paroles', style: SikaText.ui(15, w: FontWeight.w800, color: SikaColors.onYellow)),
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        );
+          ));
+    }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
+      padding: const EdgeInsets.fromLTRB(20, 10, 12, 6),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (lyrics.synced)
-            Row(
-              children: [
-                Text('Décalage', style: SikaText.ui(13, w: FontWeight.w700, color: ink)),
-                const Spacer(),
-                step('−0,5 s', const Duration(milliseconds: -500)),
-                SizedBox(
-                  width: 72,
-                  child: GestureDetector(
-                    onTap: () => prefs.setOffset(track.id, Duration.zero),
-                    child: Text(
-                      offset == Duration.zero ? '0 s' : fmt(offset),
-                      textAlign: TextAlign.center,
-                      style: SikaText.ui(14, w: FontWeight.w800, color: ink),
-                    ),
-                  ),
-                ),
-                step('+0,5 s', const Duration(milliseconds: 500)),
-              ],
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              decoration: BoxDecoration(color: const Color(0x33141208), borderRadius: BorderRadius.circular(2)),
             ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
+          ),
+          const SizedBox(height: 10),
+          // Titre + actions
+          Row(
             children: [
-              // Clip plus long : l'écart est le plus souvent une intro avant le premier couplet.
-              if (lyrics.approximate && gap > Duration.zero && offset != gap)
-                ActionChip(
-                  backgroundColor: SikaColors.onYellow,
-                  side: BorderSide.none,
-                  label: Text('Aligner sur le clip (${fmt(gap)})', style: SikaText.ui(12, w: FontWeight.w800, color: SikaColors.yellow)),
-                  onPressed: () => prefs.setOffset(track.id, gap),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Paroles', style: SikaText.display(20, color: ink)),
+                    Text('${track.title} · ${track.artist.name}',
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.ui(12, w: FontWeight.w600, color: ink.withValues(alpha: 0.65))),
+                  ],
                 ),
-              ActionChip(
-                backgroundColor: const Color(0x1F141208),
-                side: BorderSide.none,
-                avatar: const Icon(Icons.ios_share_rounded, size: 16, color: ink),
-                label: Text('Partager des paroles', style: SikaText.ui(12, w: FontWeight.w800, color: ink)),
-                onPressed: () => showLyricsShare(context, track: track, lyrics: lyrics),
               ),
-              if (lyrics.id != null)
-                ActionChip(
-                  backgroundColor: const Color(0x1F141208),
-                  side: BorderSide.none,
-                  label: Text('Ce ne sont pas les bonnes paroles', style: SikaText.ui(12, w: FontWeight.w800, color: ink)),
-                  onPressed: () {
-                    prefs.reject(track.id, lyrics.id!);
-                    Navigator.of(context).pop();
-                    showSnack(context, 'Recherche d\'autres paroles…');
-                  },
-                ),
+              _Pill(
+                label: '',
+                icon: Icons.ios_share_rounded,
+                semantics: 'Partager des paroles',
+                onTap: () => showLyricsShare(context, track: track, lyrics: lyrics),
+              ),
+              if (lyrics.id != null) ...[
+                const SizedBox(width: 8),
+                _Pill(label: '', icon: Icons.flag_outlined, semantics: 'Signaler de mauvaises paroles', onTap: report),
+              ],
+              const SizedBox(width: 8),
+              _Pill(label: '', icon: Icons.close_rounded, semantics: 'Fermer', onTap: () => Navigator.of(context).pop()),
             ],
           ),
-          if (lyrics.synced)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text('Astuce : touche une ligne pour y sauter, appui long pour la partager.',
-                  style: SikaText.ui(11, color: ink.withValues(alpha: 0.6))),
+          // Décalage (paroles synchronisées uniquement)
+          if (lyrics.synced) ...[
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Text('Synchro', style: SikaText.ui(13, w: FontWeight.w700, color: ink)),
+                const SizedBox(width: 10),
+                _Pill(label: '−0,5', onTap: () => prefs.setOffset(track.id, offset - const Duration(milliseconds: 500)), semantics: 'Paroles plus tôt'),
+                GestureDetector(
+                  onTap: () => prefs.setOffset(track.id, Duration.zero),
+                  child: SizedBox(
+                    width: 64,
+                    child: Text(offset == Duration.zero ? '0 s' : fmt(offset),
+                        textAlign: TextAlign.center, style: SikaText.ui(14, w: FontWeight.w800, color: ink)),
+                  ),
+                ),
+                _Pill(label: '+0,5', onTap: () => prefs.setOffset(track.id, offset + const Duration(milliseconds: 500)), semantics: 'Paroles plus tard'),
+                const Spacer(),
+                // Clip plus long : l'écart vient le plus souvent d'une intro avant le premier couplet.
+                if (lyrics.approximate && gap > Duration.zero && offset != gap)
+                  _Pill(label: 'Clip ${fmt(gap)}', strong: true, semantics: 'Aligner sur le clip', onTap: () => prefs.setOffset(track.id, gap)),
+              ],
             ),
+          ],
+          const SizedBox(height: 6),
+          Text(
+            lyrics.synced ? 'Touche une ligne pour y sauter · appui long pour la partager' : 'Paroles non synchronisées',
+            style: SikaText.ui(11, color: ink.withValues(alpha: 0.55)),
+          ),
         ],
       ),
     );

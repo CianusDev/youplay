@@ -57,6 +57,21 @@ class MediaStorage {
     return f;
   }
 
+  /// Enregistre une image dans `Pictures/YouPlay` (visible dans la galerie). Retourne le chemin.
+  static Future<String?> savePicture(List<int> bytes, String name) async {
+    try {
+      final pics = await _ch.invokeMethod<String>('picturesDir');
+      final dir = Directory('$pics/YouPlay');
+      await dir.create(recursive: true);
+      final f = File('${dir.path}/$name');
+      await f.writeAsBytes(bytes);
+      await scan(f.path);
+      return f.path;
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// Signale le fichier à la médiathèque Android (apps musique, explorateur).
   static Future<void> scan(String path) async {
     try {

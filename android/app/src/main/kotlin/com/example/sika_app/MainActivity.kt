@@ -19,9 +19,13 @@ class MainActivity : AudioServiceActivity() {
                 "musicDir" -> result.success(
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_MUSIC).absolutePath,
                 )
+                "picturesDir" -> result.success(
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath,
+                )
                 "scan" -> {
                     val path = call.argument<String>("path")!!
-                    MediaScannerConnection.scanFile(applicationContext, arrayOf(path), arrayOf("audio/mp4"), null)
+                    val mime = if (path.endsWith(".png")) "image/png" else "audio/mp4"
+                    MediaScannerConnection.scanFile(applicationContext, arrayOf(path), arrayOf(mime), null)
                     result.success(null)
                 }
                 else -> result.notImplemented()
