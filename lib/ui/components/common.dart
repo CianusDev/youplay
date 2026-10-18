@@ -344,65 +344,47 @@ Future<String?> askText(BuildContext context, String title, String hint, {String
   );
 }
 
-/// Supprime une playlist perso, en proposant de supprimer aussi son dossier sur le téléphone.
-/// Retourne true si la playlist a été supprimée.
+/// Supprime une playlist perso. Ses sons téléchargés ne sont pas perdus : leur fichier unique
+/// retourne dans Music/YouPlay (ou dans le dossier d'une autre playlist qui les contient),
+/// puis le dossier de la playlist est retiré. Retourne true si la playlist a été supprimée.
 Future<bool> confirmDeletePlaylist(BuildContext context, WidgetRef ref, String playlistId) async {
   final p = ref.read(libraryProvider).myPlaylists.where((x) => x.id == playlistId).firstOrNull;
   if (p == null) return false;
-  var withFolder = true;
   final ok = await showDialog<bool>(
     context: context,
     useRootNavigator: true,
-    builder: (ctx) => StatefulBuilder(
-      builder: (ctx, setState) => AlertDialog(
-        backgroundColor: SikaColors.surface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SikaRadius.xl)),
-        title: Text('Supprimer « ${p.name} » ?', style: SikaText.display(20, w: FontWeight.w800)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('La playlist sera retirée de ta bibliothèque.', style: SikaText.ui(14, color: SikaColors.textSoft)),
-            if (DownloadManager.supported) ...[
-              const SizedBox(height: 12),
-              CheckboxListTile(
-                value: withFolder,
-                onChanged: (v) => setState(() => withFolder = v ?? false),
-                contentPadding: EdgeInsets.zero,
-                activeColor: SikaColors.yellow,
-                checkColor: SikaColors.onYellow,
-                controlAffinity: ListTileControlAffinity.leading,
-                title: Text('Supprimer aussi le dossier', style: SikaText.ui(14, w: FontWeight.w700)),
-                subtitle: Text(
-                  '${PlaylistFolders.displayPath(p.name)} — tes fichiers ajoutés à la main sont conservés',
-                  style: SikaText.meta,
-                ),
-              ),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: Text('Annuler', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: Text('Supprimer', style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.orange)),
-          ),
-        ],
+    builder: (ctx) => AlertDialog(
+      backgroundColor: SikaColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SikaRadius.xl)),
+      title: Text('Supprimer « ${p.name} » ?', style: SikaText.display(20, w: FontWeight.w800)),
+      content: Text(
+        DownloadManager.supported
+            ? 'La playlist et son dossier ${PlaylistFolders.displayPath(p.name)} seront retirés. '
+                'Les sons téléchargés sont conservés dans Music/YouPlay.'
+            : 'La playlist sera retirée de ta bibliothèque.',
+        style: SikaText.ui(14, color: SikaColors.textSoft, height: 1.45),
       ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(false),
+          child: Text('Annuler', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
+        ),
+        TextButton(
+          onPressed: () => Navigator.of(ctx).pop(true),
+          child: Text('Supprimer', style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.orange)),
+        ),
+      ],
     ),
   );
   if (ok != true) return false;
   ref.read(libraryProvider.notifier).deletePlaylist(playlistId);
-  if (withFolder && DownloadManager.supported) {
+  if (DownloadManager.supported) {
     final kept = await ref.read(playlistFoldersProvider).deleteFolder(p.name);
     if (context.mounted) {
-      showSnack(context, kept > 0 ? 'Playlist supprimée · $kept fichier(s) perso conservé(s) dans le dossier' : 'Playlist et dossier supprimés');
+      showSnack(context, kept > 0 ? 'Playlist supprimée · $kept fichier(s) perso laissé(s) dans le dossier' : 'Playlist supprimée · sons conservés dans Music/YouPlay');
     }
   } else if (context.mounted) {
-    showSnack(context, 'Playlist supprimée · dossier conservé');
+    showSnack(context, 'Playlist supprimée');
   }
   return true;
 }

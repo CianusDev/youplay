@@ -186,6 +186,13 @@ class DownloadManager extends Notifier<DownloadsState> {
     }
   }
 
+  /// Le fichier d'un titre a été déplacé (dossier de playlist ↔ Music/YouPlay) : on met à jour son chemin.
+  void relocate(String trackId, String newPath) {
+    final it = state.items[trackId];
+    if (it == null || it.path == newPath) return;
+    _set(state.copyWith(items: {...state.items, trackId: it.copyWith(path: newPath)}));
+  }
+
   void setOffline(bool v) => _set(state.copyWith(offlineMode: v));
   void setSmart(bool v, {Iterable<Track> liked = const []}) {
     _set(state.copyWith(smartDownload: v));

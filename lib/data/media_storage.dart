@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,6 +12,10 @@ import 'models.dart';
 class MediaStorage {
   static const _ch = MethodChannel('youplay/media');
   static Directory? _dir;
+
+  /// Tests uniquement : oublie le dossier résolu.
+  @visibleForTesting
+  static void resetForTest() => _dir = null;
 
   /// Demande « Musique et audio » (Android 13+) ou le stockage (≤ 12).
   /// Écrire ses propres fichiers dans Music n'en a pas besoin ; relire après réinstallation, si.
