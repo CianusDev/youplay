@@ -334,7 +334,14 @@ class _LyricsCard extends ConsumerWidget {
             stops: [0, 0.14, 0.82, 1],
           ).createShader(r),
           blendMode: BlendMode.dstIn,
-          child: _LyricsView(key: ValueKey('${track.id}-${l.id}'), lyrics: l, trackId: track.id, track: track, compact: true),
+          child: _LyricsView(
+            key: ValueKey('${track.id}-${l.id}'),
+            lyrics: l,
+            trackId: track.id,
+            compact: true,
+            // Appui long : paroles plein écran, directement en sélection avec cette ligne.
+            onLongPressLine: (i) => showFullLyrics(context, track, l, select: true, initialLine: i),
+          ),
         ),
       );
     }
@@ -352,7 +359,7 @@ class _LyricsCard extends ConsumerWidget {
               // Clip plus long que la version minutée et pas encore réglé : on le signale.
               if (l != null && l.approximate && ref.watch(lyricsOffsetProvider(track.id)) == Duration.zero)
                 GestureDetector(
-                  onTap: () => _showFullLyrics(context, l),
+                  onTap: () => showFullLyrics(context, track, l),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: const Color(0x1F141208), borderRadius: BorderRadius.circular(8)),
@@ -368,7 +375,7 @@ class _LyricsCard extends ConsumerWidget {
                   iconSize: 17,
                   color: ink,
                   background: const Color(0x1F141208),
-                  onTap: () => showLyricsShare(context, track: track, lyrics: l),
+                  onTap: () => showFullLyrics(context, track, l, select: true),
                 ),
                 const SizedBox(width: 8),
               ],
@@ -380,7 +387,7 @@ class _LyricsCard extends ConsumerWidget {
                   iconSize: 18,
                   color: ink,
                   background: const Color(0x1F141208),
-                  onTap: () => _showFullLyrics(context, l),
+                  onTap: () => showFullLyrics(context, track, l),
                 ),
             ],
           ),
@@ -391,24 +398,158 @@ class _LyricsCard extends ConsumerWidget {
     );
   }
 
-  void _showFullLyrics(BuildContext context, Lyrics l) {
-    showModalBottomSheet<void>(
-      context: context,
-      useRootNavigator: true,
-      isScrollControlled: true,
-      backgroundColor: SikaColors.yellow,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(SikaRadius.xl))),
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.9,
-        maxChildSize: 0.95,
-        builder: (ctx, scroll) => Column(
-          children: [
-            _LyricsControls(track: track, lyrics: l),
-            Expanded(child: _LyricsView(lyrics: l, trackId: track.id, track: track, controller: scroll)),
-          ],
+}
+
+/// Ouvre les paroles en plein écran. `select` : directement en mode sélection (partage),
+/// `initialLine` : ligne présélectionnée (appui long).
+void showFullLyrics(BuildContext context, Track track, Lyrics l, {bool select = false, int? initialLine}) {
+  showModalBottomSheet<void>(
+    context: context,
+    useRootNavigator: true,
+    isScrollControlled: true,
+    backgroundColor: SikaColors.yellow,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(SikaRadius.xl))),
+    builder: (ctx) => DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.9,
+      maxChildSize: 0.95,
+      builder: (ctx, scroll) => _FullLyricsSheet(track: track, lyrics: l, scroll: scroll, select: select, initialLine: initialLine),
+    ),
+  );
+}
+
+const _maxShareLines = 6;
+bool _shareable(String line) => line.trim().isNotEmpty && line.trim() != '♪';
+
+/// Paroles plein écran avec un mode sélection intégré (comme Spotify) :
+/// on choisit les lignes sur place, puis « Suivant » ouvre la personnalisation de la carte.
+class _FullLyricsSheet extends StatefulWidget {
+  const _FullLyricsSheet({required this.track, required this.lyrics, required this.scroll, this.select = false, this.initialLine});
+  final Track track;
+  final Lyrics lyrics;
+  final ScrollController scroll;
+  final bool select;
+  final int? initialLine;
+
+  @override
+  State<_FullLyricsSheet> createState() => _FullLyricsSheetState();
+}
+
+class _FullLyricsSheetState extends State<_FullLyricsSheet> {
+  late bool _selecting = widget.select || widget.initialLine != null;
+  late final Set<int> _selected = {
+    if (widget.initialLine != null && _shareable(widget.lyrics.lines[widget.initialLine!].text)) widget.initialLine!,
+  };
+
+  void _enter([int? line]) => setState(() {
+        _selecting = true;
+        _selected.clear();
+        if (line != null && _shareable(widget.lyrics.lines[line].text)) _selected.add(line);
+      });
+
+  void _exit() => setState(() {
+        _selecting = false;
+        _selected.clear();
+      });
+
+  void _toggle(int i) {
+    if (!_shareable(widget.lyrics.lines[i].text)) return;
+    setState(() {
+      if (!_selected.remove(i)) {
+        if (_selected.length >= _maxShareLines) {
+          showSnack(context, '$_maxShareLines lignes maximum');
+          return;
+        }
+        _selected.add(i);
+      }
+    });
+  }
+
+  void _next() {
+    final lines = (_selected.toList()..sort()).map((i) => widget.lyrics.lines[i].text).toList();
+    Navigator.of(context, rootNavigator: true).push(MaterialPageRoute<void>(
+      fullscreenDialog: true,
+      builder: (_) => LyricsCardEditor(track: widget.track, lines: lines),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const ink = SikaColors.onYellow;
+    final n = _selected.length;
+    return Column(
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 200),
+          child: _selecting
+              ? Padding(
+                  key: const ValueKey('sel'),
+                  padding: const EdgeInsets.fromLTRB(20, 10, 12, 10),
+                  child: Column(
+                    children: [
+                      Container(width: 36, height: 4, decoration: BoxDecoration(color: const Color(0x33141208), borderRadius: BorderRadius.circular(2))),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Choisis des paroles', style: SikaText.display(20, color: ink)),
+                                Text(n == 0 ? 'Touche jusqu\'à $_maxShareLines lignes' : '$n / $_maxShareLines ligne${n > 1 ? 's' : ''}',
+                                    style: SikaText.ui(12, w: FontWeight.w600, color: ink.withValues(alpha: 0.65))),
+                              ],
+                            ),
+                          ),
+                          _Pill(label: 'Annuler', onTap: _exit),
+                        ],
+                      ),
+                    ],
+                  ),
+                )
+              : _LyricsControls(key: const ValueKey('read'), track: widget.track, lyrics: widget.lyrics, onShare: () => _enter()),
         ),
-      ),
+        Expanded(
+          child: _LyricsView(
+            lyrics: widget.lyrics,
+            trackId: widget.track.id,
+            controller: widget.scroll,
+            selected: _selecting ? _selected : null,
+            onToggle: _toggle,
+            onLongPressLine: _selecting ? null : (i) => _enter(i),
+            scrollTo: widget.initialLine,
+          ),
+        ),
+        // Barre « Suivant » (mode sélection)
+        AnimatedSize(
+          duration: const Duration(milliseconds: 200),
+          child: !_selecting
+              ? const SizedBox(width: double.infinity)
+              : SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        onPressed: n == 0 ? null : _next,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size(0, 52),
+                          backgroundColor: SikaColors.onYellow,
+                          foregroundColor: SikaColors.yellow,
+                          disabledBackgroundColor: const Color(0x26141208),
+                          shape: const StadiumBorder(),
+                        ),
+                        child: Text(
+                          n == 0 ? 'Touche des lignes pour les choisir' : 'Suivant · $n ligne${n > 1 ? 's' : ''}',
+                          style: SikaText.ui(15, w: FontWeight.w800, color: n == 0 ? ink.withValues(alpha: 0.5) : SikaColors.yellow),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }
@@ -457,9 +598,10 @@ class _Pill extends StatelessWidget {
 /// En-tête de la feuille plein écran : poignée, titre, actions (partager, signaler, fermer)
 /// et réglage du décalage sur une seule ligne compacte.
 class _LyricsControls extends ConsumerWidget {
-  const _LyricsControls({required this.track, required this.lyrics});
+  const _LyricsControls({super.key, required this.track, required this.lyrics, required this.onShare});
   final Track track;
   final Lyrics lyrics;
+  final VoidCallback onShare;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -538,7 +680,7 @@ class _LyricsControls extends ConsumerWidget {
                 label: '',
                 icon: Icons.ios_share_rounded,
                 semantics: 'Partager des paroles',
-                onTap: () => showLyricsShare(context, track: track, lyrics: lyrics),
+                onTap: onShare,
               ),
               if (lyrics.id != null) ...[
                 const SizedBox(width: 8),
@@ -574,7 +716,7 @@ class _LyricsControls extends ConsumerWidget {
           ],
           const SizedBox(height: 6),
           Text(
-            lyrics.synced ? 'Touche une ligne pour y sauter · appui long pour la partager' : 'Paroles non synchronisées',
+            lyrics.synced ? 'Touche une ligne pour y sauter · appui long pour partager' : 'Appui long sur une ligne pour partager',
             style: SikaText.ui(11, color: ink.withValues(alpha: 0.55)),
           ),
         ],
@@ -586,10 +728,25 @@ class _LyricsControls extends ConsumerWidget {
 /// Paroles défilantes : ligne en cours animée et suivie automatiquement.
 /// `compact` = carte du lecteur (pas de défilement manuel) ; sinon feuille plein écran.
 class _LyricsView extends ConsumerStatefulWidget {
-  const _LyricsView({super.key, required this.lyrics, required this.trackId, this.track, this.controller, this.compact = false});
+  const _LyricsView({
+    super.key,
+    required this.lyrics,
+    required this.trackId,
+    this.controller,
+    this.compact = false,
+    this.selected,
+    this.onToggle,
+    this.onLongPressLine,
+    this.scrollTo,
+  });
   final Lyrics lyrics;
   final String trackId;
-  final Track? track;
+  /// Non nul = mode sélection : toucher une ligne la (dé)sélectionne, le suivi auto est suspendu.
+  final Set<int>? selected;
+  final ValueChanged<int>? onToggle;
+  final ValueChanged<int>? onLongPressLine;
+  /// Ligne à amener à l'écran à l'ouverture (appui long depuis la carte).
+  final int? scrollTo;
   final ScrollController? controller;
   final bool compact;
 
@@ -603,6 +760,20 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
   ScrollController get _ctrl => widget.controller ?? _own;
   int _current = -1;
   DateTime _userScrolledAt = DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  void initState() {
+    super.initState();
+    final target = widget.scrollTo;
+    if (target != null) {
+      _current = -2; // le suivi auto ne doit pas écraser ce défilement initial
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _userScrolledAt = DateTime.fromMillisecondsSinceEpoch(0);
+        _follow(target, animate: false);
+        _userScrolledAt = DateTime.now(); // laisse la ligne choisie à l'écran quelques secondes
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -639,7 +810,8 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
     // Décalage choisi par l'utilisateur + 250 ms d'anticipation (la ligne s'allume juste avant d'être chantée).
     final offset = ref.watch(lyricsOffsetProvider(widget.trackId));
     final cur = l.synced ? l.indexAt(pos - offset + const Duration(milliseconds: 250)) : -1;
-    if (cur != _current) {
+    final selecting = widget.selected != null;
+    if (cur != _current && !selecting) {
       final first = _current == -1;
       _current = cur;
       if (cur >= 0) WidgetsBinding.instance.addPostFrameCallback((_) => _follow(cur, animate: !first));
@@ -663,20 +835,27 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
             for (var i = 0; i < l.lines.length; i++)
               GestureDetector(
                 key: _keys[i],
-                onLongPress: widget.track == null
+                onLongPress: widget.onLongPressLine == null
                     ? null
                     : () {
                         HapticFeedback.mediumImpact();
-                        showLyricsShare(context, track: widget.track!, lyrics: l, initialLine: i);
+                        widget.onLongPressLine!(i);
                       },
-                onTap: l.lines[i].time == null
+                onTap: selecting
+                    ? () {
+                        HapticFeedback.selectionClick();
+                        widget.onToggle?.call(i);
+                      }
+                    : l.lines[i].time == null
                     ? null
                     : () {
                         _userScrolledAt = DateTime.fromMillisecondsSinceEpoch(0);
                         final at = l.lines[i].time! + ref.read(lyricsOffsetProvider(widget.trackId));
                         ref.read(playerProvider.notifier).seek(at < Duration.zero ? Duration.zero : at);
                       },
-                child: Padding(
+                child: selecting
+                    ? _SelectableLine(text: l.lines[i].text, selected: widget.selected!.contains(i), style: other)
+                    : Padding(
                   padding: EdgeInsets.symmetric(vertical: compact ? 3 : 5),
                   child: AnimatedScale(
                     scale: !l.synced || i == cur ? 1.0 : 0.96,
@@ -808,6 +987,34 @@ class _AmbientBackground extends ConsumerWidget {
             ],
           );
         },
+      ),
+    );
+  }
+}
+
+/// Ligne en mode sélection : surlignée en noir quand elle est choisie (comme Spotify).
+class _SelectableLine extends StatelessWidget {
+  const _SelectableLine({required this.text, required this.selected, required this.style});
+  final String text;
+  final bool selected;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    final usable = _shareable(text);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 150),
+      margin: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: selected ? SikaColors.onYellow : Colors.transparent,
+        borderRadius: BorderRadius.circular(SikaRadius.sm),
+      ),
+      child: Text(
+        text,
+        style: style.copyWith(
+          color: selected ? SikaColors.yellow : SikaColors.onYellow.withValues(alpha: usable ? 0.55 : 0.25),
+        ),
       ),
     );
   }
