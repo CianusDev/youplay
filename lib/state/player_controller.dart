@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:audio_session/audio_session.dart';
 import 'package:flutter/widgets.dart' show AppLifecycleListener, AppLifecycleState, WidgetsBinding;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -92,6 +93,8 @@ class PlayerController extends Notifier<PlayerUi> {
   bool _resumeAfterInterruption = false;
   DateTime? _interruptedAt;
   Timer? _focusPoll;
+  bool _sawCall = false; // un vrai appel a eu lieu pendant l'interruption
+  static const _audioCh = MethodChannel('youplay/audio');
   AppLifecycleListener? _lifecycle;
 
   static const _sessionKey = 'youplay.session.v1';
@@ -217,8 +220,10 @@ class PlayerController extends Notifier<PlayerUi> {
               if (ev.type != AudioInterruptionType.pause) return;
               _resumeAfterInterruption = true;
               _interruptedAt = DateTime.now();
-              // Sur MIUI, la fin d'un appel n'est pas toujours signalée : on redemande le focus audio
-              // régulièrement (Android le refuse pendant un appel) et on reprend dès qu'il est rendu.
+              _sawCall = false;
+              // Sur MIUI, la fin d'un appel n'est pas toujours signalée : pendant un appel, on surveille
+              // le mode audio et on reprend dès qu'il raccroche. Hors appel (vidéo, note vocale…), on
+              // attend que l'autre app rende le son : redemander le focus le lui volerait.
               _focusPoll?.cancel();
               _focusPoll = Timer.periodic(const Duration(seconds: 2), (_) => _tryResume(session));
             }
@@ -246,8 +251,23 @@ class PlayerController extends Notifier<PlayerUi> {
       _resumeAfterInterruption = false;
       return;
     }
-    if (DateTime.now().difference(since) < const Duration(seconds: 3)) return;
+    final elapsed = DateTime.now().difference(since);
+    if (elapsed < const Duration(seconds: 3)) return;
     try {
+      final inCall = await _audioCh.invokeMethod<bool>('inCall') ?? false;
+      if (inCall) {
+        _sawCall = true;
+        return;
+      }
+      if (!_sawCall) {
+        // Pas d'appel (vidéo, autre app) : plus de surveillance, la reprise viendra de l'événement de fin.
+        if (elapsed > const Duration(seconds: 15)) {
+          _focusPoll?.cancel();
+          _focusPoll = null;
+        }
+        return;
+      }
+      // Appel terminé : on reprend le focus audio et la lecture.
       if (await session.setActive(true)) _resume();
     } catch (_) {}
   }

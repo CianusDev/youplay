@@ -1,5 +1,6 @@
 package com.example.sika_app
 
+import android.media.AudioManager
 import android.media.MediaScannerConnection
 import android.os.Environment
 import com.ryanheise.audioservice.AudioServiceActivity
@@ -27,6 +28,17 @@ class MainActivity : AudioServiceActivity() {
                     val mime = if (path.endsWith(".png")) "image/png" else "audio/mp4"
                     MediaScannerConnection.scanFile(applicationContext, arrayOf(path), arrayOf(mime), null)
                     result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Appel en cours (sonnerie, GSM, VoIP) : sert à reprendre la musique à la fin d'un appel sur MIUI.
+        MethodChannel(messenger, "youplay/audio").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "inCall" -> {
+                    val am = getSystemService(AUDIO_SERVICE) as AudioManager
+                    result.success(am.mode != AudioManager.MODE_NORMAL)
                 }
                 else -> result.notImplemented()
             }
