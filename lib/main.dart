@@ -20,7 +20,10 @@ Future<void> main() async {
   await JustAudioBackground.init(
     androidNotificationChannelId: 'app.sika.audio',
     androidNotificationChannelName: 'Lecture YouPlay',
-    androidNotificationOngoing: true,
+    // Le service reste au premier plan même en pause : sinon Android 12+ refuse de le relancer
+    // quand la lecture reprend en arrière-plan (fin d'appel, fin de vidéo…), la musique tourne
+    // sans protection et MIUI tue l'app au premier manque de mémoire.
+    androidStopForegroundOnPause: false,
     // Icône monochrome dédiée : l'icône d'app adaptative ferait masquer la notification.
     androidNotificationIcon: 'drawable/ic_stat_youplay',
   );
