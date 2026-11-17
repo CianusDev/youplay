@@ -92,6 +92,11 @@ jobs:
           jq -r '.commits[]?.message | split("\n")[0] | "- " + .' "$GITHUB_EVENT_PATH" > notes.md
           [ -s notes.md ] || git log -1 --format='- %s' > notes.md
 
+      # Nom lisible pour le site (releases/latest/download/YouPlay.apk) : copie de l'APK arm64-v8a,
+      # qui couvre presque tous les téléphones récents. L'app, elle, choisit son APK via version.json.
+      - name: YouPlay.apk
+        run: cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk YouPlay.apk
+
       # Lu par l'app via releases/latest/download/version.json : pas l'API GitHub, donc pas
       # sa limite de 60 requêtes/heure par adresse IP (vite atteinte sur les réseaux mobiles).
       - name: version.json
@@ -116,5 +121,6 @@ jobs:
           body_path: notes.md
           files: |
             build/app/outputs/flutter-apk/app-*-release.apk
+            YouPlay.apk
             version.json
           make_latest: true
