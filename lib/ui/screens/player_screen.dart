@@ -391,44 +391,83 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 }
 
 /// Ligne de paroles en cours, au-dessus du titre (paroles synchronisées uniquement).
-/// L'espace reste réservé pendant les intros et silences : le titre ne saute pas.
+/// Même mouvement que la carte des paroles : la nouvelle ligne monte et s'allume (500 ms,
+/// easeOutCubic, zoom 0,96 → 1), l'ancienne part vers le haut en s'effaçant.
+/// Le texte n'est jamais coupé : la hauteur suit la ligne en douceur.
 class _NowLyricLine extends ConsumerWidget {
   const _NowLyricLine({required this.track, required this.position});
   final Track track;
   final Duration position;
 
+  static const _dur = Duration(milliseconds: 500);
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = ref.watch(lyricsProvider(LyricsKey(track.id, track.artist.name, track.title, track.duration))).value;
     final synced = l != null && l.synced && l.lines.isNotEmpty;
-    String text = '';
+    var idx = -1; // -1 = intro / silence : rien à afficher
+    var text = '';
     if (synced) {
       final at = position - ref.watch(lyricsOffsetProvider(track.id)) + const Duration(milliseconds: 250);
       if (at >= l.lines.first.time!) {
-        final line = l.lines[l.indexAt(at)].text.trim();
-        if (line != '♪') text = line;
+        idx = l.indexAt(at);
+        final line = l.lines[idx].text.trim();
+        if (line == '♪' || line.isEmpty) {
+          idx = -1;
+        } else {
+          text = line;
+        }
       }
     }
+    // Clé = index de la ligne (un refrain répété s'anime aussi).
+    final key = ValueKey<int>(idx);
     return AnimatedSize(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
       alignment: Alignment.topCenter,
       child: !synced
           ? const SizedBox(width: double.infinity, height: 30)
           : Padding(
               padding: const EdgeInsets.only(top: 22, bottom: 14),
-              child: SizedBox(
-                width: double.infinity,
-                height: 44,
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  layoutBuilder: (cur, prev) => Stack(alignment: Alignment.topLeft, children: [...prev, ?cur]),
-                  child: Text(
-                    text,
-                    key: ValueKey(text),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: SikaText.ui(16, w: FontWeight.w700, color: SikaColors.text.withValues(alpha: 0.9)),
+              child: ClipRect(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: double.infinity, minHeight: 22),
+                  child: AnimatedSwitcher(
+                    duration: _dur,
+                    // Les lignes sortantes ne comptent pas dans la hauteur : seule la ligne en cours la fixe.
+                    layoutBuilder: (cur, prev) => Stack(
+                      alignment: Alignment.topLeft,
+                      children: [
+                        for (final p in prev) Positioned(left: 0, right: 0, top: 0, child: p),
+                        ?cur,
+                      ],
+                    ),
+                    // Les deux lignes ne se superposent jamais : l'ancienne monte et s'efface sur les
+                    // 40 premiers % (valeur 1 → 0,6), la nouvelle n'apparaît qu'ensuite (0,4 → 1).
+                    transitionBuilder: (child, anim) {
+                      final incoming = child.key == key;
+                      final fade = CurvedAnimation(
+                        parent: anim,
+                        curve: incoming ? const Interval(0.4, 1, curve: Curves.easeOut) : const Interval(0.6, 1, curve: Curves.easeIn),
+                      );
+                      final move = CurvedAnimation(parent: anim, curve: incoming ? Curves.easeOutCubic : Curves.easeInCubic);
+                      return SlideTransition(
+                        position: Tween<Offset>(begin: Offset(0, incoming ? 0.5 : -0.5), end: Offset.zero).animate(move),
+                        child: FadeTransition(
+                          opacity: fade,
+                          child: ScaleTransition(
+                            scale: Tween<double>(begin: 0.96, end: 1).animate(anim),
+                            alignment: Alignment.centerLeft,
+                            child: child,
+                          ),
+                        ),
+                      );
+                    },
+                    child: SizedBox(
+                      key: key,
+                      width: double.infinity,
+                      child: Text(text, style: SikaText.ui(16, w: FontWeight.w700, color: SikaColors.text.withValues(alpha: 0.9))),
+                    ),
                   ),
                 ),
               ),
@@ -949,8 +988,11 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
       if (cur >= 0) WidgetsBinding.instance.addPostFrameCallback((_) => _follow(cur, animate: !first));
     }
     final compact = widget.compact;
+    // Même taille et même graisse pour toutes les lignes : seule la couleur (et un zoom, qui ne
+    // touche pas la mise en page) change. Animer la taille recoupait le texte à chaque image :
+    // la ligne se déformait et toute la carte tressautait.
     final current = compact ? SikaText.display(21, height: 1.3) : SikaText.lyricsCurrent;
-    final other = compact ? SikaText.display(19, w: FontWeight.w700, height: 1.35) : SikaText.lyricsOther;
+    final other = current;
 
     return NotificationListener<UserScrollNotification>(
       onNotification: (_) {
