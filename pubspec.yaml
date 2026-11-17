@@ -111,13 +111,7 @@ flutter_launcher_icons:
   adaptive_icon_background: "#FFD60A"
   adaptive_icon_foreground: "assets/branding/icon_foreground.png"
   min_sdk_android: 21
-  ios: true
-  remove_alpha_ios: true
-  web:
-    generate: true
-    image_path: "assets/branding/icon.png"
-    background_color: "#0F0E0B"
-    theme_color: "#FFD60A"
+  ios: false
 
 # Écran de démarrage natif (affiché pendant le chargement de l'app).
 flutter_native_splash:
@@ -127,6 +121,6 @@ flutter_native_splash:
     image: assets/branding/splash_android12.png
     color: "#0F0E0B"
     icon_background_color: "#FFD60A"
-  ios: true
+  ios: false
   web: false
   fullscreen: false

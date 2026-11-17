@@ -1,8 +1,10 @@
 # YouPlay
 
-Lecteur de musique Android, façon Spotify, sans pub ni limite de sauts. Le catalogue vient de YouTube, via [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor).
+[English](README.md) · **[⬇ Télécharger la dernière version](https://github.com/CianusDev/youplay/releases/latest)**
 
-> **Usage personnel uniquement.** L'extraction de l'audio YouTube contrevient aux conditions d'utilisation de YouTube. Cette app n'est pas faite pour être publiée ni distribuée. Elle peut aussi cesser de fonctionner quand YouTube change son fonctionnement interne. Il faut alors mettre à jour NewPipeExtractor.
+Lecteur de musique Android open source, façon Spotify, sans pub ni limite de sauts. Le catalogue vient de YouTube, via [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor).
+
+> YouPlay n'est ni affilié à YouTube ni à Google, ni approuvé par eux. L'app peut cesser de fonctionner quand YouTube change son fonctionnement interne : il faut alors mettre à jour NewPipeExtractor. Utilise-la à tes risques et respecte les droits des artistes.
 
 ## Fonctionnalités
 
@@ -20,6 +22,8 @@ Lecteur de musique Android, façon Spotify, sans pub ni limite de sauts. Le cata
   - Le téléchargement intelligent récupère automatiquement les titres likés.
 - **Bibliothèque :** titres likés, playlists perso, artistes et albums ajoutés, et les statistiques « Ton mois en musique ».
 - **Reprise de lecture :** au redémarrage, l'app retrouve le dernier titre, sa position et la file d'attente.
+- **Minuteur de sommeil :** de 5 à 60 minutes, ou à la fin du titre en cours.
+- **Mises à jour automatiques :** chaque push sur `main` publie une release, et l'app propose de l'installer.
 
 Toutes les données restent sur le téléphone, sans compte ni serveur.
 
@@ -57,6 +61,7 @@ lib/
     screens/                accueil, recherche, bibliothèque, collection, lecteur, téléchargés
 android/app/src/main/kotlin/…/NewPipeBridge.kt   recherche, flux audio, titres liés
 sika-handoff/               maquette d'origine (specs, HTML, captures)
+.github/workflows/release.yml  build + release GitHub à chaque push sur main
 ```
 
 ## Lancer le projet
