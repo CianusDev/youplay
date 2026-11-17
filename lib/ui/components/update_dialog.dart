@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/app_update.dart';
+import '../../l10n/l10n.dart';
 import '../../theme/sika_tokens.dart';
 
 const _skippedKey = 'youplay.update.skipped';
@@ -61,7 +62,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       if (mounted) {
         setState(() {
           _progress = null;
-          _error = 'Le téléchargement a échoué. Vérifie ta connexion et réessaie.';
+          _error = context.l10n.updateDownloadFailed;
         });
       }
     }
@@ -71,11 +72,12 @@ class _UpdateDialogState extends State<_UpdateDialog> {
   Widget build(BuildContext context) {
     final r = widget.release;
     final busy = _progress != null;
-    final mb = r.apkSize > 0 ? ' · ${(r.apkSize / 1048576).toStringAsFixed(1)} Mo' : '';
+    final l = context.l10n;
+    final mb = r.apkSize > 0 ? ' · ${l.megabytes((r.apkSize / 1048576).toStringAsFixed(1))}' : '';
     return AlertDialog(
       backgroundColor: SikaColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SikaRadius.xl)),
-      title: Text('Mise à jour disponible', style: SikaText.display(20, w: FontWeight.w800)),
+      title: Text(l.updateAvailable, style: SikaText.display(20, w: FontWeight.w800)),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -102,7 +104,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
               ),
             ),
             const SizedBox(height: 8),
-            Text('Téléchargement… ${((_progress ?? 0) * 100).round()} %', style: SikaText.meta),
+            Text(l.downloadingPercent(((_progress ?? 0) * 100).round()), style: SikaText.meta),
           ],
           if (_error != null) ...[
             const SizedBox(height: 12),
@@ -113,11 +115,11 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       actions: [
         TextButton(
           onPressed: busy ? null : () => Navigator.of(context).pop(true),
-          child: Text('Plus tard', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
+          child: Text(l.later, style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
         ),
         TextButton(
           onPressed: busy ? null : _update,
-          child: Text(_error != null ? 'Réessayer' : 'Mettre à jour',
+          child: Text(_error != null ? l.retry : l.update,
               style: SikaText.ui(14, w: FontWeight.w800, color: busy ? SikaColors.placeholder : SikaColors.yellow)),
         ),
       ],

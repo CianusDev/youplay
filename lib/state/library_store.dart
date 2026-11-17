@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/models.dart';
 import 'download_manager.dart';
 import 'providers.dart';
+import '../l10n/l10n.dart';
 
 class MyPlaylist {
   const MyPlaylist({required this.id, required this.name, required this.tracks});
@@ -224,7 +225,7 @@ class LibraryStore extends Notifier<LibraryState> {
   MyPlaylist createPlaylist(String name) {
     final id = '${DateTime.now().millisecondsSinceEpoch}${Random().nextInt(999)}';
     // Nom unique (insensible à la casse) : chaque playlist a son propre dossier sur le téléphone.
-    var base = name.trim().isEmpty ? 'Ma playlist n°${state.myPlaylists.length + 1}' : name.trim();
+    var base = name.trim().isEmpty ? L10n.current.myPlaylistN(state.myPlaylists.length + 1) : name.trim();
     final taken = state.myPlaylists.map((p) => p.name.toLowerCase()).toSet();
     var unique = base;
     for (var i = 2; taken.contains(unique.toLowerCase()); i++) {
@@ -237,7 +238,7 @@ class LibraryStore extends Notifier<LibraryState> {
 
   /// Nom libre pour une playlist (unique, insensible à la casse). Retourne le nom retenu.
   String uniquePlaylistName(String wanted, {String? exceptId}) {
-    final base = wanted.trim().isEmpty ? 'Ma playlist' : wanted.trim();
+    final base = wanted.trim().isEmpty ? L10n.current.myPlaylist : wanted.trim();
     final taken = state.myPlaylists.where((p) => p.id != exceptId).map((p) => p.name.toLowerCase()).toSet();
     var unique = base;
     for (var i = 2; taken.contains(unique.toLowerCase()); i++) {

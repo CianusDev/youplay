@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/sika_tokens.dart';
 import 'sika_icon.dart';
+import '../../l10n/l10n.dart';
 
 class PlayButton extends StatelessWidget {
   const PlayButton({
@@ -29,7 +30,7 @@ class PlayButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: playing ? 'Pause' : 'Lecture',
+      label: playing ? context.l10n.pause : context.l10n.play,
       child: Container(
         width: size,
         height: size,

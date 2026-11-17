@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
@@ -87,9 +88,9 @@ class AsyncView<T> extends StatelessWidget {
 }
 
 class ErrorBox extends StatelessWidget {
-  const ErrorBox({super.key, this.onRetry, this.message = 'Connexion impossible. Vérifie ton réseau.'});
+  const ErrorBox({super.key, this.onRetry, this.message});
   final VoidCallback? onRetry;
-  final String message;
+  final String? message;
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +98,7 @@ class ErrorBox extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
       child: Column(
         children: [
-          Text(message, textAlign: TextAlign.center, style: SikaText.ui(14, color: SikaColors.textMuted)),
+          Text(message ?? context.l10n.connectionError, textAlign: TextAlign.center, style: SikaText.ui(14, color: SikaColors.textMuted)),
           if (onRetry != null) ...[
             const SizedBox(height: 12),
             OutlinedButton(
@@ -107,7 +108,7 @@ class ErrorBox extends StatelessWidget {
                 side: const BorderSide(color: SikaColors.text, width: 1.5),
                 shape: const StadiumBorder(),
               ),
-              child: Text('Réessayer', style: SikaText.ui(13, w: FontWeight.w700)),
+              child: Text(context.l10n.retry, style: SikaText.ui(13, w: FontWeight.w700)),
             ),
           ],
         ],
@@ -166,6 +167,7 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
     return Consumer(builder: (ctx, sheetRef, _) {
       final liked = sheetRef.watch(libraryProvider.select((s) => s.isLiked(t.id)));
       final dl = sheetRef.watch(downloadsProvider.select((s) => s.items[t.id]?.status));
+      final l = context.l10n;
       void done(String msg) {
         Navigator.of(ctx).pop();
         showSnack(context, msg);
@@ -193,31 +195,31 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
             SheetAction(
               icon: liked ? 'heart-filled' : 'heart',
               color: liked ? SikaColors.yellow : SikaColors.text,
-              label: liked ? 'Retirer des titres likés' : 'Ajouter aux titres likés',
+              label: liked ? l.removeFromLiked : l.addToLiked,
               onTap: () {
                 final now = ref.read(libraryProvider.notifier).toggleLike(t);
-                done(now ? 'Ajouté aux titres likés' : 'Retiré des titres likés');
+                done(now ? l.addedToLiked : l.removedFromLiked);
               },
             ),
             SheetAction(
               icon: 'queue',
-              label: 'Lire ensuite',
+              label: l.playNext,
               onTap: () {
                 ref.read(playerProvider.notifier).playNext(t);
-                done('Lu juste après');
+                done(l.playingNext);
               },
             ),
             SheetAction(
               icon: 'list',
-              label: 'Ajouter à la file d\'attente',
+              label: l.addToQueue,
               onTap: () {
                 ref.read(playerProvider.notifier).addToQueue(t);
-                done('Ajouté à la file d\'attente');
+                done(l.addedToQueue);
               },
             ),
             SheetAction(
               icon: 'add-circle',
-              label: 'Ajouter à une playlist',
+              label: l.addToPlaylist,
               onTap: () {
                 Navigator.of(ctx).pop();
                 showAddToPlaylist(context, ref, t);
@@ -226,10 +228,10 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
             if (removeFromPlaylistId != null)
               SheetAction(
                 icon: 'close',
-                label: 'Retirer de cette playlist',
+                label: l.removeFromThisPlaylist,
                 onTap: () {
                   ref.read(libraryProvider.notifier).removeFromPlaylist(removeFromPlaylistId, t.id);
-                  done('Retiré de la playlist');
+                  done(l.removedFromPlaylist);
                 },
               ),
             if (DownloadManager.supported)
@@ -237,23 +239,23 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
                 icon: dl == DownloadStatus.done ? 'download-circle-filled' : 'download-circle',
                 color: dl == DownloadStatus.done ? SikaColors.yellow : SikaColors.text,
                 label: switch (dl) {
-                  DownloadStatus.done => 'Supprimer le téléchargement',
-                  DownloadStatus.downloading || DownloadStatus.queued => 'Annuler le téléchargement',
-                  _ => 'Télécharger',
+                  DownloadStatus.done => l.deleteDownload,
+                  DownloadStatus.downloading || DownloadStatus.queued => l.cancelDownload,
+                  _ => l.download,
                 },
                 onTap: () {
                   if (dl == null || dl == DownloadStatus.failed) {
                     ref.read(downloadsProvider.notifier).enqueue([t]);
-                    done('Téléchargement lancé');
+                    done(l.downloadStarted);
                   } else {
                     ref.read(downloadsProvider.notifier).removeTrack(t.id);
-                    done('Téléchargement supprimé');
+                    done(l.downloadDeleted);
                   }
                 },
               ),
             SheetAction(
               icon: 'info',
-              label: 'Voir l\'artiste',
+              label: l.viewArtist,
               onTap: () {
                 Navigator.of(ctx).pop();
                 openArtist(context, t.artist);
@@ -261,7 +263,7 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
             ),
             SheetAction(
               icon: 'share',
-              label: 'Partager',
+              label: l.share,
               onTap: () {
                 Navigator.of(ctx).pop();
                 SharePlus.instance.share(ShareParams(text: '${t.title} — ${t.artist.name}\n${t.shareUrl}'));
@@ -278,6 +280,7 @@ Future<void> showTrackOptions(BuildContext context, WidgetRef ref, Track t, {Str
 Future<void> showAddToPlaylist(BuildContext context, WidgetRef ref, Track t) {
   return showSikaSheet(context, (ctx) {
     final mine = ref.read(libraryProvider).myPlaylists;
+    final l = context.l10n;
     return SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -285,29 +288,29 @@ Future<void> showAddToPlaylist(BuildContext context, WidgetRef ref, Track t) {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-            child: Text('Ajouter à une playlist', style: SikaText.h2Small),
+            child: Text(l.addToPlaylist, style: SikaText.h2Small),
           ),
           SheetAction(
             icon: 'plus',
-            label: 'Nouvelle playlist',
+            label: l.newPlaylist,
             color: SikaColors.yellow,
             onTap: () async {
               Navigator.of(ctx).pop();
-              final name = await askText(context, 'Nouvelle playlist', 'Nom de la playlist');
+              final name = await askText(context, l.newPlaylist, l.playlistName);
               if (name == null) return;
               final p = ref.read(libraryProvider.notifier).createPlaylist(name);
               ref.read(libraryProvider.notifier).addToPlaylist(p.id, t);
-              if (context.mounted) showSnack(context, 'Ajouté à « ${p.name} » · ${PlaylistFolders.displayPath(p.name)}');
+              if (context.mounted) showSnack(context, l.addedToPlaylistPath(p.name, PlaylistFolders.displayPath(p.name)));
             },
           ),
           for (final p in mine)
             SheetAction(
               icon: 'list',
-              label: '${p.name} · ${p.tracks.length} titres',
+              label: '${p.name} · ${l.songCount(p.tracks.length)}',
               onTap: () {
                 ref.read(libraryProvider.notifier).addToPlaylist(p.id, t);
                 Navigator.of(ctx).pop();
-                showSnack(context, 'Ajouté à « ${p.name} » · ${PlaylistFolders.displayPath(p.name)}');
+                showSnack(context, l.addedToPlaylistPath(p.name, PlaylistFolders.displayPath(p.name)));
               },
             ),
           const SizedBox(height: 8),
@@ -340,8 +343,8 @@ Future<String?> askText(BuildContext context, String title, String hint, {String
         onSubmitted: (v) => Navigator.of(ctx).pop(v),
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text('Annuler', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted))),
-        TextButton(onPressed: () => Navigator.of(ctx).pop(c.text), child: Text('OK', style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.yellow))),
+        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: Text(ctx.l10n.cancel, style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted))),
+        TextButton(onPressed: () => Navigator.of(ctx).pop(c.text), child: Text(ctx.l10n.ok, style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.yellow))),
       ],
     ),
   );
@@ -353,28 +356,28 @@ Future<String?> askText(BuildContext context, String title, String hint, {String
 Future<bool> confirmDeletePlaylist(BuildContext context, WidgetRef ref, String playlistId) async {
   final p = ref.read(libraryProvider).myPlaylists.where((x) => x.id == playlistId).firstOrNull;
   if (p == null) return false;
+  final l = context.l10n;
   final ok = await showDialog<bool>(
     context: context,
     useRootNavigator: true,
     builder: (ctx) => AlertDialog(
       backgroundColor: SikaColors.surface,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(SikaRadius.xl)),
-      title: Text('Supprimer « ${p.name} » ?', style: SikaText.display(20, w: FontWeight.w800)),
+      title: Text(l.deletePlaylistTitle(p.name), style: SikaText.display(20, w: FontWeight.w800)),
       content: Text(
         DownloadManager.supported
-            ? 'La playlist et son dossier ${PlaylistFolders.displayPath(p.name)} seront retirés. '
-                'Les sons téléchargés sont conservés dans Music/YouPlay.'
-            : 'La playlist sera retirée de ta bibliothèque.',
+            ? l.deletePlaylistBodyFolder(PlaylistFolders.displayPath(p.name))
+            : l.deletePlaylistBody,
         style: SikaText.ui(14, color: SikaColors.textSoft, height: 1.45),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(false),
-          child: Text('Annuler', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
+          child: Text(l.cancel, style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.textMuted)),
         ),
         TextButton(
           onPressed: () => Navigator.of(ctx).pop(true),
-          child: Text('Supprimer', style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.orange)),
+          child: Text(l.delete, style: SikaText.ui(14, w: FontWeight.w800, color: SikaColors.orange)),
         ),
       ],
     ),
@@ -384,10 +387,10 @@ Future<bool> confirmDeletePlaylist(BuildContext context, WidgetRef ref, String p
   if (DownloadManager.supported) {
     final kept = await ref.read(playlistFoldersProvider).deleteFolder(p.name);
     if (context.mounted) {
-      showSnack(context, kept > 0 ? 'Playlist supprimée · $kept fichier(s) perso laissé(s) dans le dossier' : 'Playlist supprimée · sons conservés dans Music/YouPlay');
+      showSnack(context, kept > 0 ? l.playlistDeletedKeptFiles(kept) : l.playlistDeletedSongsKept);
     }
   } else if (context.mounted) {
-    showSnack(context, 'Playlist supprimée');
+    showSnack(context, l.playlistDeleted);
   }
   return true;
 }
@@ -396,10 +399,11 @@ Future<bool> confirmDeletePlaylist(BuildContext context, WidgetRef ref, String p
 Future<void> renamePlaylistDialog(BuildContext context, WidgetRef ref, String playlistId) async {
   final p = ref.read(libraryProvider).myPlaylists.where((x) => x.id == playlistId).firstOrNull;
   if (p == null) return;
-  final v = await askText(context, 'Renommer la playlist', 'Nom de la playlist', initial: p.name);
+  final l = context.l10n;
+  final v = await askText(context, l.renamePlaylist, l.playlistName, initial: p.name);
   if (v == null || v.trim().isEmpty || v.trim() == p.name) return;
   final name = await ref.read(playlistFoldersProvider).renamePlaylist(playlistId, v);
   if (context.mounted) {
-    showSnack(context, DownloadManager.supported ? 'Renommée « $name » · ${PlaylistFolders.displayPath(name)}' : 'Renommée « $name »');
+    showSnack(context, DownloadManager.supported ? l.renamedToPath(name, PlaylistFolders.displayPath(name)) : l.renamedTo(name));
   }
 }

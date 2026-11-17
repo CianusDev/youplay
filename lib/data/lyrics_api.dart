@@ -45,7 +45,7 @@ class LyricsApi {
   LyricsApi({http.Client? client}) : _client = client ?? http.Client();
   final http.Client _client;
 
-  static const _headers = {'User-Agent': 'YouPlay (usage personnel)'};
+  static const _headers = {'User-Agent': 'YouPlay (https://github.com/CianusDev/youplay)'};
 
   /// 1. correspondance exacte (artiste + titre + durée ±2 s) ; 2. recherche floue stricte.
   /// `exclude` = enregistrements LRCLIB signalés comme mauvais par l'utilisateur pour ce titre.

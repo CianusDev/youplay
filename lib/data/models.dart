@@ -1,6 +1,8 @@
 /// Modèles de données Sika (indépendants de la source).
 library;
 
+import '../l10n/l10n.dart';
+
 class Artist {
   const Artist({
     required this.id,
@@ -193,8 +195,8 @@ String formatDuration(Duration d) {
 String formatTotal(Duration d) {
   final h = d.inHours;
   final m = d.inMinutes % 60;
-  if (h == 0) return '$m min';
-  return '$h h ${m.toString().padLeft(2, '0')}';
+  if (h == 0) return L10n.current.durationMin(m);
+  return L10n.current.durationHourMin(h, m.toString().padLeft(2, '0'));
 }
 
 String formatCount(int n) {

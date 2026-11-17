@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../../data/app_update.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
@@ -20,6 +21,7 @@ class _SettingsSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lib = ref.watch(libraryProvider);
     final dl = ref.watch(downloadsProvider);
+    final l = context.l10n;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
@@ -27,25 +29,32 @@ class _SettingsSheet extends ConsumerWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Réglages', style: SikaText.display(24, ls: -0.6)),
+            Text(l.settingsTitle, style: SikaText.display(24, ls: -0.6)),
             const SizedBox(height: 16),
             _Row(
-              title: 'Prénom',
-              subtitle: lib.userName,
+              title: l.firstName,
+              subtitle: displayUserName(l, lib.userName),
               trailing: TextButton(
                 onPressed: () async {
-                  final v = await askText(context, 'Ton prénom', 'Prénom', initial: lib.userName);
+                  final v = await askText(context, l.yourFirstName, l.firstName, initial: lib.userName);
                   if (v != null) ref.read(libraryProvider.notifier).setUserName(v);
                 },
-                child: Text('Modifier', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+                child: Text(l.edit, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
               ),
             ),
             if (DownloadManager.supported)
               _Row(
-                title: 'Mode hors ligne',
-                subtitle: 'Ne lire que les titres téléchargés',
-                trailing: SikaSwitch(value: dl.offlineMode, label: 'Mode hors ligne', onChanged: ref.read(downloadsProvider.notifier).setOffline),
+                title: l.offlineMode,
+                subtitle: l.offlineModeSubtitle,
+                trailing: SikaSwitch(value: dl.offlineMode, label: l.offlineMode, onChanged: ref.read(downloadsProvider.notifier).setOffline),
               ),
+            if (DownloadManager.supported)
+              _Row(
+                title: l.saveMobileData,
+                subtitle: l.saveMobileDataSub,
+                trailing: SikaSwitch(value: dl.wifiOnly, label: l.saveMobileData, onChanged: ref.read(downloadsProvider.notifier).setWifiOnly),
+              ),
+            const _LanguageRow(),
             if (DownloadManager.supported) const _BackgroundPlaybackRow(),
             if (DownloadManager.supported) const _UpdateRow(),
             const SizedBox(height: 16),
@@ -53,8 +62,7 @@ class _SettingsSheet extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(color: SikaColors.surface2, borderRadius: BorderRadius.circular(SikaRadius.lg)),
               child: Text(
-                'YouPlay lit YouTube via NewPipeExtractor (usage personnel). '
-                'Paroles fournies par LRCLIB. Tes likes, playlists, historique et téléchargements restent sur cet appareil.',
+                l.settingsAbout,
                 style: SikaText.ui(13, color: SikaColors.textSoft, height: 1.5),
               ),
             ),
@@ -85,6 +93,53 @@ class _Row extends StatelessWidget {
           trailing,
         ]),
       );
+}
+
+/// Langue de l'interface : langue du téléphone (par défaut), français ou anglais.
+class _LanguageRow extends ConsumerWidget {
+  const _LanguageRow();
+
+  static String _name(Locale locale) => switch (locale.languageCode) {
+        'fr' => 'Français',
+        _ => 'English',
+      };
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = context.l10n;
+    final chosen = ref.watch(appLocaleProvider);
+    return _Row(
+      title: l.language,
+      subtitle: chosen == null ? '${l.languageSystem} · ${_name(Localizations.localeOf(context))}' : _name(chosen),
+      trailing: TextButton(
+        onPressed: () => showSikaSheet(context, (ctx) {
+          void pick(Locale? v) {
+            ref.read(appLocaleProvider.notifier).set(v);
+            Navigator.of(ctx).pop();
+          }
+
+          Widget option(String label, Locale? v) => SheetAction(
+                icon: chosen == v ? 'check' : 'globe',
+                label: label,
+                color: chosen == v ? SikaColors.yellow : SikaColors.text,
+                onTap: () => pick(v),
+              );
+          return SafeArea(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(l.language, style: SikaText.h2Small),
+              ),
+              option(l.languageSystem, null),
+              for (final loc in supportedAppLocales) option(_name(loc), loc),
+              const SizedBox(height: 8),
+            ]),
+          );
+        }),
+        child: Text(l.edit, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+      ),
+    );
+  }
 }
 
 /// Version installée + recherche manuelle d'une mise à jour (résultat affiché dans la ligne).
@@ -123,12 +178,13 @@ class _UpdateRowState extends State<_UpdateRow> {
 
   @override
   Widget build(BuildContext context) {
-    final v = _version == null || _version!.isEmpty ? 'Version installée' : 'Version $_version';
+    final l = context.l10n;
+    final v = _version == null || _version!.isEmpty ? l.installedVersion : l.versionLabel(_version!);
     return _Row(
-      title: 'Mises à jour',
+      title: l.updatesTitle,
       subtitle: switch (_result) {
-        UpdateCheck.upToDate => '$v · à jour',
-        UpdateCheck.failed => 'Vérification impossible : vérifie ta connexion',
+        UpdateCheck.upToDate => l.upToDateSuffix(v),
+        UpdateCheck.failed => l.updateCheckFailed,
         _ => v,
       },
       trailing: _checking
@@ -138,7 +194,7 @@ class _UpdateRowState extends State<_UpdateRow> {
             )
           : TextButton(
               onPressed: _check,
-              child: Text('Vérifier', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+              child: Text(context.l10n.check, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
             ),
     );
   }
@@ -165,17 +221,18 @@ class _BackgroundPlaybackRowState extends State<_BackgroundPlaybackRow> {
   @override
   Widget build(BuildContext context) {
     final ok = _granted == true;
+    final l = context.l10n;
     return _Row(
-      title: 'Lecture en arrière-plan',
-      subtitle: ok ? 'Aucune restriction de batterie' : 'Évite que le téléphone coupe la musique',
+      title: l.backgroundPlayback,
+      subtitle: ok ? l.noBatteryRestriction : l.backgroundPlaybackHint,
       trailing: ok
-          ? Text('Activé', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow))
+          ? Text(l.enabled, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow))
           : TextButton(
               onPressed: () async {
                 final r = await Permission.ignoreBatteryOptimizations.request();
                 if (mounted) setState(() => _granted = r.isGranted);
               },
-              child: Text('Autoriser', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+              child: Text(l.allow, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
             ),
     );
   }

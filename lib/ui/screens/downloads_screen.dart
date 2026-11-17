@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
@@ -12,11 +13,12 @@ import '../components/sika_icon.dart';
 import '../components/sika_switch.dart';
 import 'settings_sheet.dart';
 
-const _chips = ['Tout', 'Playlists', 'Albums', 'Podcasts'];
+List<String> _chips(AppLocalizations l) => [l.chipAll, l.chipPlaylists, l.chipAlbums, l.chipPodcasts];
 
 String _size(int bytes) {
-  if (bytes >= 1 << 30) return '${(bytes / (1 << 30)).toStringAsFixed(1)} Go';
-  return '${(bytes / (1 << 20)).toStringAsFixed(bytes < 10 << 20 ? 1 : 0)} Mo';
+  final l = L10n.current;
+  if (bytes >= 1 << 30) return l.gigabytes((bytes / (1 << 30)).toStringAsFixed(1));
+  return l.megabytes((bytes / (1 << 20)).toStringAsFixed(bytes < 10 << 20 ? 1 : 0));
 }
 
 DownloadRowStatus _rowStatus(DownloadStatus s) => switch (s) {
@@ -63,11 +65,12 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
       final st = dl.collectionStatus(c);
       rows.add(DownloadRow(
         title: c.ref.title,
-        meta: '${c.ref.subtitle.isEmpty ? 'Playlist' : c.ref.subtitle} · ${c.trackIds.length} titres',
+        meta: '${collectionKindLabel(context.l10n, c.ref.subtitle)} · ${context.l10n.songCount(c.trackIds.length)}',
         seed: c.ref.key,
         imageUrl: c.ref.artworkUrl,
         variant: c.ref.kind == CollectionKind.likes ? 1 : null,
         status: _rowStatus(st.status),
+        waitingForWifi: dl.waitingForWifi,
         progress: st.progress,
         podcast: c.ref.subtitle == 'Podcast',
         onTap: () {
@@ -87,10 +90,11 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
     for (final i in singles.where(keepSingle)) {
       rows.add(DownloadRow(
         title: i.track.title,
-        meta: '${i.track.isPodcast ? 'Podcast' : 'Titre'} · ${i.track.artist.name}',
+        meta: '${i.track.isPodcast ? context.l10n.kindPodcast : context.l10n.kindSong} · ${i.track.artist.name}',
         seed: i.track.id,
         imageUrl: i.track.artworkUrl,
         status: _rowStatus(i.status),
+        waitingForWifi: dl.waitingForWifi,
         progress: i.progress,
         podcast: i.track.isPodcast,
         onTap: () {
@@ -101,7 +105,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             ref,
             playable,
             start: playable.indexOf(i.track),
-            source: const CollectionRef(CollectionKind.downloads, 'me', title: 'Téléchargés'),
+            source: CollectionRef(CollectionKind.downloads, 'me', title: context.l10n.downloadsTitle),
           );
         },
         onLongPress: () => _confirmDelete(context, i.track.title, () => mgr.removeTrack(i.track.id)),
@@ -116,37 +120,37 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             padding: const EdgeInsets.fromLTRB(20, 0, 10, 0),
             child: Row(
               children: [
-                Expanded(child: Text('Téléchargés', style: SikaText.h1Page)),
+                Expanded(child: Text(context.l10n.downloadsTitle, style: SikaText.h1Page)),
                 IconButtonSika(
                   icon: 'sliders',
-                  label: 'Réglages',
+                  label: context.l10n.settingsTitle,
                   onTap: () => showSettingsSheet(context),
                 ),
               ],
             ),
           ),
           if (!DownloadManager.supported)
-            const Padding(
-              padding: EdgeInsets.only(top: 24),
-              child: EmptyState('Les téléchargements hors ligne sont disponibles dans l\'app Android / iOS, pas dans la version web.'),
+            Padding(
+              padding: const EdgeInsets.only(top: 24),
+              child: EmptyState(context.l10n.downloadsWebOnly),
             )
           else ...[
             _SettingsCard(dl: dl),
             _Storage(dl: dl),
             Padding(
               padding: const EdgeInsets.only(top: 22),
-              child: ChipRow(labels: _chips, selected: _chip, onSelect: (i) => setState(() => _chip = i)),
+              child: ChipRow(labels: _chips(context.l10n), selected: _chip, onSelect: (i) => setState(() => _chip = i)),
             ),
             if (activeCount > 0 || dl.paused)
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 4),
                 child: Row(
                   children: [
-                    Expanded(child: Text('En cours · $activeCount', style: SikaText.display(16))),
+                    Expanded(child: Text(context.l10n.inProgressCount(activeCount), style: SikaText.display(16))),
                     TextButton(
                       onPressed: mgr.togglePause,
                       child: Text(
-                        dl.paused ? 'Tout reprendre' : 'Tout mettre en pause',
+                        dl.paused ? context.l10n.resumeAll : context.l10n.pauseAll,
                         style: SikaText.ui(12, w: FontWeight.w700, color: SikaColors.textMuted),
                       ),
                     ),
@@ -155,7 +159,17 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
               )
             else
               const SizedBox(height: 10),
-            if (rows.isEmpty) const EmptyState('Rien ici pour l\'instant. Appuie sur ↓ sur un titre ou une playlist.') else ...rows,
+            // « Économiser les données mobiles » sans Wi-Fi : on explique pourquoi rien n'avance.
+            if (dl.waitingForWifi)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 10),
+                child: Row(children: [
+                  const SikaIcon('wifi-off', size: 18, color: SikaColors.yellow),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(context.l10n.waitingForWifiBanner, style: SikaText.meta)),
+                ]),
+              ),
+            if (rows.isEmpty) EmptyState(context.l10n.downloadsEmpty) else ...rows,
           ],
         ],
       ),
@@ -171,7 +185,7 @@ class _DownloadsScreenState extends ConsumerState<DownloadsScreen> {
             ),
             SheetAction(
               icon: 'close',
-              label: 'Supprimer de l\'appareil',
+              label: context.l10n.removeFromDevice,
               color: SikaColors.orange,
               onTap: () {
                 onDelete();
@@ -213,16 +227,16 @@ class _SettingsCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Mode hors ligne', style: SikaText.ui(15, w: FontWeight.w800)),
+                    Text(context.l10n.offlineMode, style: SikaText.ui(15, w: FontWeight.w800)),
                     const SizedBox(height: 2),
                     Text(
-                      on ? 'Activé · seuls tes téléchargements sont lus' : 'Désactivé · streaming autorisé',
+                      on ? context.l10n.offlineOnSub : context.l10n.offlineOffSub,
                       style: SikaText.meta,
                     ),
                   ],
                 ),
               ),
-              SikaSwitch(value: on, label: 'Mode hors ligne', onChanged: mgr.setOffline),
+              SikaSwitch(value: on, label: context.l10n.offlineMode, onChanged: mgr.setOffline),
             ],
           ),
           const Padding(padding: EdgeInsets.symmetric(vertical: 16), child: Divider(height: 1, color: SikaColors.surface2)),
@@ -232,16 +246,16 @@ class _SettingsCard extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Téléchargement intelligent', style: SikaText.ui(14, w: FontWeight.w700)),
+                    Text(context.l10n.smartDownload, style: SikaText.ui(14, w: FontWeight.w700)),
                     const SizedBox(height: 2),
-                    Text('Garde tes titres likés disponibles hors ligne', style: SikaText.meta),
+                    Text(context.l10n.smartDownloadSub, style: SikaText.meta),
                   ],
                 ),
               ),
               const SizedBox(width: 12),
               SikaSwitch(
                 value: dl.smartDownload,
-                label: 'Téléchargement intelligent',
+                label: context.l10n.smartDownload,
                 onChanged: (v) => mgr.setSmart(v, liked: ref.read(libraryProvider).likedTracks),
               ),
             ],
@@ -268,9 +282,9 @@ class _Storage extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text('Stockage', style: SikaText.ui(12, w: FontWeight.w700)),
+              Text(context.l10n.storage, style: SikaText.ui(12, w: FontWeight.w700)),
               const Spacer(),
-              Text('${_size(total)} utilisés · $count titre${count > 1 ? 's' : ''}', style: SikaText.meta),
+              Text(context.l10n.storageUsed(_size(total), count), style: SikaText.meta),
             ],
           ),
           const SizedBox(height: 8),
@@ -292,9 +306,9 @@ class _Storage extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              _Legend(color: SikaColors.yellow, label: 'Musique · ${_size(music)}'),
+              _Legend(color: SikaColors.yellow, label: context.l10n.musicSize(_size(music))),
               const SizedBox(width: 14),
-              _Legend(color: SikaColors.orange, label: 'Podcasts · ${_size(pod)}'),
+              _Legend(color: SikaColors.orange, label: context.l10n.podcastsSize(_size(pod))),
             ],
           ),
         ],

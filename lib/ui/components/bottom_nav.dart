@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/sika_tokens.dart';
 import 'sika_icon.dart';
+import '../../l10n/l10n.dart';
 
 class BottomNav extends StatelessWidget {
   const BottomNav({super.key, required this.index, required this.onTap});
@@ -11,11 +12,16 @@ class BottomNav extends StatelessWidget {
   final ValueChanged<int> onTap;
 
   static const items = [
-    ('Accueil', 'home', 'home-filled'),
-    ('Recherche', 'search', 'search'),
-    ('Bibliothèque', 'library', 'library'),
-    ('Téléchargés', 'download-circle', 'download-circle-filled'),
+    ('home', 'home-filled'),
+    ('search', 'search'),
+    ('library', 'library'),
+    ('download-circle', 'download-circle-filled'),
   ];
+
+  static String _label(BuildContext context, int i) {
+    final l = context.l10n;
+    return [l.navHome, l.navSearch, l.navLibrary, l.navDownloads][i];
+  }
 
   /// Hauteur totale (contenu 66 + safe area basse, min 22 comme la maquette).
   static double heightOf(BuildContext context) => 66 + bottomInset(context);
@@ -39,7 +45,7 @@ class BottomNav extends StatelessWidget {
                 Semantics(
                   button: true,
                   selected: i == index,
-                  label: items[i].$1,
+                  label: _label(context, i),
                   excludeSemantics: true,
                   child: InkResponse(
                     onTap: () => onTap(i),
@@ -52,13 +58,13 @@ class BottomNav extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             SikaIcon(
-                              i == index ? items[i].$3 : items[i].$2,
+                              i == index ? items[i].$2 : items[i].$1,
                               size: 24,
                               color: i == index ? SikaColors.yellow : SikaColors.textMuted,
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              items[i].$1,
+                              _label(context, i),
                               style: SikaText.navLabel.copyWith(color: i == index ? SikaColors.yellow : SikaColors.textMuted),
                             ),
                           ],

@@ -9,6 +9,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/lyrics_api.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
@@ -22,18 +23,18 @@ import '../components/sika_icon.dart';
 import '../components/waveform_seek_bar.dart';
 import 'lyrics_share_sheet.dart';
 
-String _sourceLabel(CollectionRef? s) {
-  if (s == null) return 'LECTURE EN COURS';
+String _sourceLabel(AppLocalizations l, CollectionRef? s) {
+  if (s == null) return l.srcNowPlaying;
   return switch (s.kind) {
-    CollectionKind.playlist => s.subtitle == 'ALBUM' ? 'LECTURE DEPUIS L\'ALBUM' : 'LECTURE DEPUIS LA PLAYLIST',
-    CollectionKind.mine || CollectionKind.likes => 'LECTURE DEPUIS LA PLAYLIST',
-    CollectionKind.artist => 'LECTURE DEPUIS L\'ARTISTE',
-    CollectionKind.trending => s.id == 'radio' ? 'LECTURE DEPUIS LA RADIO' : 'LECTURE DEPUIS LES TENDANCES',
-    CollectionKind.genre => 'LECTURE DEPUIS LE MIX',
-    CollectionKind.query => s.title.isEmpty ? 'LECTURE DEPUIS LA RECHERCHE' : 'LECTURE DEPUIS LE MIX',
-    CollectionKind.downloads => 'LECTURE HORS LIGNE',
-    CollectionKind.ytalbum => 'LECTURE DEPUIS L\'ALBUM',
-    CollectionKind.ytquery => s.subtitle == 'Artiste' ? 'LECTURE DEPUIS L\'ARTISTE' : 'LECTURE DEPUIS LA RECHERCHE',
+    CollectionKind.playlist => s.subtitle == 'ALBUM' ? l.srcAlbum : l.srcPlaylist,
+    CollectionKind.mine || CollectionKind.likes => l.srcPlaylist,
+    CollectionKind.artist => l.srcArtist,
+    CollectionKind.trending => s.id == 'radio' ? l.srcRadio : l.srcTrending,
+    CollectionKind.genre => l.srcMix,
+    CollectionKind.query => s.title.isEmpty ? l.srcSearch : l.srcMix,
+    CollectionKind.downloads => l.srcOffline,
+    CollectionKind.ytalbum => l.srcAlbum,
+    CollectionKind.ytquery => s.subtitle == 'Artiste' ? l.srcArtist : l.srcSearch,
   };
 }
 
@@ -60,8 +61,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
       return Scaffold(
         body: Center(
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const EmptyState('Rien en lecture.'),
-            TextButton(onPressed: () => context.pop(), child: Text('Fermer', style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.yellow))),
+            EmptyState(context.l10n.nothingPlaying),
+            TextButton(onPressed: () => context.pop(), child: Text(context.l10n.close, style: SikaText.ui(14, w: FontWeight.w700, color: SikaColors.yellow))),
           ]),
         ),
       );
@@ -102,11 +103,11 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       width: double.infinity,
                       child: Row(
                         children: [
-                          IconButtonSika(icon: 'chevron-down', label: 'Fermer le lecteur', size: 48, iconSize: 24, onTap: () => context.pop()),
+                          IconButtonSika(icon: 'chevron-down', label: context.l10n.closePlayer, size: 48, iconSize: 24, onTap: () => context.pop()),
                           Expanded(
                             child: Column(
                               children: [
-                                Text(_sourceLabel(ui.source), maxLines: 1, style: SikaText.ui(11, w: FontWeight.w600, ls: 1.2, color: SikaColors.textSoft)),
+                                Text(_sourceLabel(context.l10n, ui.source), maxLines: 1, style: SikaText.ui(11, w: FontWeight.w600, ls: 1.2, color: SikaColors.textSoft)),
                                 const SizedBox(height: 2),
                                 Text(ui.source?.title.isNotEmpty == true ? ui.source!.title : t.artist.name,
                                     maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.ui(14, w: FontWeight.w700)),
@@ -115,7 +116,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                           ),
                           Transform.translate(
                             offset: const Offset(24, 0),
-                            child: IconButtonSika(icon: 'more', label: 'Options', size: 48, onTap: () => showTrackOptions(context, ref, t)),
+                            child: IconButtonSika(icon: 'more', label: context.l10n.options, size: 48, onTap: () => showTrackOptions(context, ref, t)),
                           ),
                         ],
                       ),
@@ -170,7 +171,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     const SizedBox(width: 12),
                     IconButtonSika(
                       icon: liked ? 'heart-filled' : 'heart',
-                      label: liked ? 'Retirer des titres likés' : 'Ajouter aux titres likés',
+                      label: liked ? context.l10n.removeFromLiked : context.l10n.addToLiked,
                       size: 48,
                       iconSize: 28,
                       color: liked ? SikaColors.yellow : SikaColors.text,
@@ -184,7 +185,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   position: pos,
                   duration: dur,
                   seed: t.id.hashCode % 97,
-                  badge: offlineFile ? 'Hors ligne' : 'Haute qualité',
+                  // Badge seulement pour un son lu depuis le téléphone (plus de badge « qualité »).
+                  badge: offlineFile ? context.l10n.offlineBadge : null,
                   onSeek: ctrl.seek,
                 ),
                 // 5. Contrôles
@@ -194,14 +196,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                   children: [
                     IconButtonSika(
                       icon: 'shuffle',
-                      label: ui.shuffle ? 'Désactiver l\'aléatoire' : 'Activer l\'aléatoire',
+                      label: ui.shuffle ? context.l10n.shuffleOff : context.l10n.shuffleOn,
                       size: 48,
                       color: ui.shuffle ? SikaColors.yellow : SikaColors.text,
                       onTap: ctrl.toggleShuffle,
                     ),
                     IconButtonSika(
                       icon: 'skip-prev',
-                      label: 'Précédent',
+                      label: context.l10n.previous,
                       size: 56,
                       iconSize: 30,
                       color: canPrev ? SikaColors.text : SikaColors.text.withValues(alpha: 0.3),
@@ -215,16 +217,16 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       shadow: SikaShadows.playButton,
                       onTap: ctrl.toggle,
                     ),
-                    IconButtonSika(icon: 'skip-next', label: 'Suivant', size: 56, iconSize: 30, onTap: ctrl.next),
+                    IconButtonSika(icon: 'skip-next', label: context.l10n.next, size: 56, iconSize: 30, onTap: ctrl.next),
                     Stack(
                       alignment: Alignment.center,
                       children: [
                         IconButtonSika(
                           icon: 'repeat',
                           label: switch (ui.repeat) {
-                            SikaRepeat.off => 'Répéter : désactivé',
-                            SikaRepeat.all => 'Répéter : tout',
-                            SikaRepeat.one => 'Répéter : ce titre',
+                            SikaRepeat.off => context.l10n.repeatOff,
+                            SikaRepeat.all => context.l10n.repeatAll,
+                            SikaRepeat.one => context.l10n.repeatOne,
                           },
                           size: 48,
                           color: ui.repeat == SikaRepeat.off ? SikaColors.text : SikaColors.yellow,
@@ -250,7 +252,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       const SizedBox(width: 12),
                       const SikaIcon('speaker', size: 20, color: SikaColors.yellow),
                       const SizedBox(width: 8),
-                      Text('Cet appareil', style: SikaText.ui(12, w: FontWeight.w700, color: SikaColors.yellow)),
+                      Text(context.l10n.thisDevice, style: SikaText.ui(12, w: FontWeight.w700, color: SikaColors.yellow)),
                       const Spacer(),
                       // Groupe décalé d'un bloc : écarts égaux, dernière icône alignée sur « Répéter ».
                       Transform.translate(
@@ -260,22 +262,22 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                           children: [
                             IconButtonSika(
                               icon: 'timer',
-                              label: sleep.active ? 'Minuteur de sommeil : activé' : 'Minuteur de sommeil',
+                              label: sleep.active ? context.l10n.sleepTimerOn : context.l10n.sleepTimer,
                               color: sleep.active ? SikaColors.yellow : SikaColors.text,
                               badge: sleep.active,
                               onTap: () => _showSleepTimer(context),
                             ),
                             IconButtonSika(
                               icon: 'add-circle',
-                              label: 'Ajouter à une playlist',
+                              label: context.l10n.addToPlaylist,
                               onTap: () => showAddToPlaylist(context, ref, t),
                             ),
                             IconButtonSika(
                               icon: 'share',
-                              label: 'Partager',
+                              label: context.l10n.share,
                               onTap: () => SharePlus.instance.share(ShareParams(text: '${t.title} — ${t.artist.name}\n${t.shareUrl}')),
                             ),
-                            IconButtonSika(icon: 'queue', label: 'File d\'attente', onTap: () => _showQueue(context)),
+                            IconButtonSika(icon: 'queue', label: context.l10n.queue, onTap: () => _showQueue(context)),
                           ],
                         ),
                       ),
@@ -314,36 +316,37 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
-              child: Text('Minuteur de sommeil', style: SikaText.h2Small),
+              child: Text(context.l10n.sleepTimer, style: SikaText.h2Small),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
               child: Text(
                 sleep.endsAt != null
-                    ? 'Arrêt de la lecture à ${hhmm(sleep.endsAt!)}'
+                    ? context.l10n.sleepStopsAt(hhmm(sleep.endsAt!))
                     : sleep.endOfTrack
-                        ? 'Arrêt à la fin du titre en cours'
-                        : 'La lecture se met en pause au bout du délai choisi.',
+                        ? context.l10n.sleepStopsEndOfSong
+                        : context.l10n.sleepHint,
                 style: SikaText.meta,
               ),
             ),
             for (final m in const [5, 15, 30, 45, 60])
               SheetAction(
                 icon: 'clock',
-                label: m == 60 ? '1 heure' : '$m minutes',
-                onTap: () => pick(() => timer.start(Duration(minutes: m)), 'Arrêt dans ${m == 60 ? '1 heure' : '$m minutes'}'),
+                label: m == 60 ? context.l10n.oneHour : context.l10n.durationMinutes(m),
+                onTap: () => pick(() => timer.start(Duration(minutes: m)),
+                    context.l10n.stopsIn(m == 60 ? context.l10n.oneHour : context.l10n.durationMinutes(m))),
               ),
             SheetAction(
               icon: 'skip-next',
-              label: 'Fin du titre',
-              onTap: () => pick(timer.startEndOfTrack, 'Arrêt à la fin du titre'),
+              label: context.l10n.endOfSong,
+              onTap: () => pick(timer.startEndOfTrack, context.l10n.stopsAtEndOfSong),
             ),
             if (sleep.active)
               SheetAction(
                 icon: 'close',
-                label: 'Désactiver le minuteur',
+                label: context.l10n.turnOffTimer,
                 color: SikaColors.yellow,
-                onTap: () => pick(timer.cancel, 'Minuteur désactivé'),
+                onTap: () => pick(timer.cancel, context.l10n.timerOff),
               ),
             const SizedBox(height: 8),
           ],
@@ -366,7 +369,7 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                 if (i == 0) {
                   return Padding(
                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                    child: Text('File d\'attente', style: SikaText.h2Small),
+                    child: Text(context.l10n.queue, style: SikaText.h2Small),
                   );
                 }
                 final q = ui.queue[i - 1];
@@ -513,9 +516,9 @@ class _LyricsCard extends ConsumerWidget {
     Widget body;
     Lyrics? l = lyrics.value;
     if (lyrics.isLoading && l == null) {
-      body = Text('Recherche des paroles…', style: other);
+      body = Text(context.l10n.searchingLyrics, style: other);
     } else if (l == null) {
-      body = Text('Paroles indisponibles pour ce titre.', style: other.copyWith(fontSize: 17));
+      body = Text(context.l10n.lyricsUnavailable, style: other.copyWith(fontSize: 17));
     } else {
       // Fenêtre de hauteur fixe, défilement au doigt (le suivi automatique est sous la pochette).
       body = SizedBox(
@@ -548,7 +551,7 @@ class _LyricsCard extends ConsumerWidget {
         children: [
           Row(
             children: [
-              Text('Paroles', style: SikaText.display(17, color: ink)),
+              Text(context.l10n.lyrics, style: SikaText.display(17, color: ink)),
               const SizedBox(width: 10),
               // Clip plus long que la version minutée et pas encore réglé : on le signale.
               if (l != null && l.approximate && ref.watch(lyricsOffsetProvider(track.id)) == Duration.zero)
@@ -557,14 +560,14 @@ class _LyricsCard extends ConsumerWidget {
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(color: const Color(0x1F141208), borderRadius: BorderRadius.circular(8)),
-                    child: Text('Synchro approx. · régler', style: SikaText.ui(10, w: FontWeight.w800, color: ink)),
+                    child: Text(context.l10n.syncApproxAdjust, style: SikaText.ui(10, w: FontWeight.w800, color: ink)),
                   ),
                 ),
               const Spacer(),
               if (l != null)
                 IconButtonSika(
                   icon: 'expand',
-                  label: 'Agrandir les paroles',
+                  label: context.l10n.expandLyrics,
                   size: 36,
                   iconSize: 18,
                   color: ink,
@@ -639,7 +642,7 @@ class _FullLyricsSheetState extends State<_FullLyricsSheet> {
     setState(() {
       if (!_selected.remove(i)) {
         if (_selected.length >= _maxShareLines) {
-          showSnack(context, '$_maxShareLines lignes maximum');
+          showSnack(context, context.l10n.maxLines(_maxShareLines));
           return;
         }
         _selected.add(i);
@@ -677,13 +680,13 @@ class _FullLyricsSheetState extends State<_FullLyricsSheet> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text('Choisis des paroles', style: SikaText.display(20, color: ink)),
-                                Text(n == 0 ? 'Touche jusqu\'à $_maxShareLines lignes' : '$n / $_maxShareLines ligne${n > 1 ? 's' : ''}',
+                                Text(context.l10n.chooseLyrics, style: SikaText.display(20, color: ink)),
+                                Text(n == 0 ? context.l10n.tapUpToLines(_maxShareLines) : context.l10n.linesSelected(n, _maxShareLines),
                                     style: SikaText.ui(12, w: FontWeight.w600, color: ink.withValues(alpha: 0.65))),
                               ],
                             ),
                           ),
-                          _Pill(label: 'Annuler', onTap: _exit),
+                          _Pill(label: context.l10n.cancel, onTap: _exit),
                         ],
                       ),
                     ],
@@ -723,7 +726,7 @@ class _FullLyricsSheetState extends State<_FullLyricsSheet> {
                           shape: const StadiumBorder(),
                         ),
                         child: Text(
-                          n == 0 ? 'Touche des lignes pour les choisir' : 'Suivant · $n ligne${n > 1 ? 's' : ''}',
+                          n == 0 ? context.l10n.tapLinesToPick : context.l10n.nextWithLines(n),
                           style: SikaText.ui(15, w: FontWeight.w800, color: n == 0 ? ink.withValues(alpha: 0.5) : SikaColors.yellow),
                         ),
                       ),
@@ -791,9 +794,12 @@ class _LyricsControls extends ConsumerWidget {
     final offset = ref.watch(lyricsOffsetProvider(track.id));
     final prefs = ref.read(lyricsPrefsProvider.notifier);
     final gap = lyrics.durationGap;
+    // Séparateur décimal de la langue (0,5 en français, 0.5 en anglais).
+    final fr = Localizations.localeOf(context).languageCode == 'fr';
+    String dec(String v) => fr ? v.replaceAll('.', ',') : v;
     String fmt(Duration d) {
       final v = d.inMilliseconds / 1000;
-      return '${v > 0 ? '+' : ''}${v.toStringAsFixed(1).replaceAll('.', ',')} s';
+      return context.l10n.secondsValue('${v > 0 ? '+' : ''}${dec(v.toStringAsFixed(1))}');
     }
 
     void report() {
@@ -804,9 +810,9 @@ class _LyricsControls extends ConsumerWidget {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Mauvaises paroles ?', style: SikaText.h2Small),
+                  Text(context.l10n.wrongLyrics, style: SikaText.h2Small),
                   const SizedBox(height: 6),
-                  Text('On écarte ce texte pour ce titre et on cherche une autre version.', style: SikaText.meta),
+                  Text(context.l10n.wrongLyricsHint, style: SikaText.meta),
                   const SizedBox(height: 16),
                   SizedBox(
                     width: double.infinity,
@@ -821,9 +827,9 @@ class _LyricsControls extends ConsumerWidget {
                         prefs.reject(track.id, lyrics.id!);
                         Navigator.of(ctx).pop();
                         Navigator.of(context).pop();
-                        showSnack(context, 'Recherche d\'autres paroles…');
+                        showSnack(context, context.l10n.searchingOtherLyrics);
                       },
-                      child: Text('Chercher d\'autres paroles', style: SikaText.ui(15, w: FontWeight.w800, color: SikaColors.onYellow)),
+                      child: Text(context.l10n.findOtherLyrics, style: SikaText.ui(15, w: FontWeight.w800, color: SikaColors.onYellow)),
                     ),
                   ),
                 ],
@@ -852,7 +858,7 @@ class _LyricsControls extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Paroles', style: SikaText.display(20, color: ink)),
+                    Text(context.l10n.lyrics, style: SikaText.display(20, color: ink)),
                     Text('${track.title} · ${track.artist.name}',
                         maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.ui(12, w: FontWeight.w600, color: ink.withValues(alpha: 0.65))),
                   ],
@@ -861,15 +867,15 @@ class _LyricsControls extends ConsumerWidget {
               _Pill(
                 label: '',
                 icon: Icons.ios_share_rounded,
-                semantics: 'Partager des paroles',
+                semantics: context.l10n.shareLyrics,
                 onTap: onShare,
               ),
               if (lyrics.id != null) ...[
                 const SizedBox(width: 8),
-                _Pill(label: '', icon: Icons.flag_outlined, semantics: 'Signaler de mauvaises paroles', onTap: report),
+                _Pill(label: '', icon: Icons.flag_outlined, semantics: context.l10n.reportWrongLyrics, onTap: report),
               ],
               const SizedBox(width: 8),
-              _Pill(label: '', icon: Icons.close_rounded, semantics: 'Fermer', onTap: () => Navigator.of(context).pop()),
+              _Pill(label: '', icon: Icons.close_rounded, semantics: context.l10n.close, onTap: () => Navigator.of(context).pop()),
             ],
           ),
           // Décalage (paroles synchronisées uniquement)
@@ -877,28 +883,28 @@ class _LyricsControls extends ConsumerWidget {
             const SizedBox(height: 12),
             Row(
               children: [
-                Text('Synchro', style: SikaText.ui(13, w: FontWeight.w700, color: ink)),
+                Text(context.l10n.sync, style: SikaText.ui(13, w: FontWeight.w700, color: ink)),
                 const SizedBox(width: 10),
-                _Pill(label: '−0,5', onTap: () => prefs.setOffset(track.id, offset - const Duration(milliseconds: 500)), semantics: 'Paroles plus tôt'),
+                _Pill(label: '−${dec('0.5')}', onTap: () => prefs.setOffset(track.id, offset - const Duration(milliseconds: 500)), semantics: context.l10n.lyricsEarlier),
                 GestureDetector(
                   onTap: () => prefs.setOffset(track.id, Duration.zero),
                   child: SizedBox(
                     width: 64,
-                    child: Text(offset == Duration.zero ? '0 s' : fmt(offset),
+                    child: Text(offset == Duration.zero ? context.l10n.secondsValue('0') : fmt(offset),
                         textAlign: TextAlign.center, style: SikaText.ui(14, w: FontWeight.w800, color: ink)),
                   ),
                 ),
-                _Pill(label: '+0,5', onTap: () => prefs.setOffset(track.id, offset + const Duration(milliseconds: 500)), semantics: 'Paroles plus tard'),
+                _Pill(label: '+${dec('0.5')}', onTap: () => prefs.setOffset(track.id, offset + const Duration(milliseconds: 500)), semantics: context.l10n.lyricsLater),
                 const Spacer(),
                 // Clip plus long : l'écart vient le plus souvent d'une intro avant le premier couplet.
                 if (lyrics.approximate && gap > Duration.zero && offset != gap)
-                  _Pill(label: 'Clip ${fmt(gap)}', strong: true, semantics: 'Aligner sur le clip', onTap: () => prefs.setOffset(track.id, gap)),
+                  _Pill(label: context.l10n.clipOffset(fmt(gap)), strong: true, semantics: context.l10n.alignToClip, onTap: () => prefs.setOffset(track.id, gap)),
               ],
             ),
           ],
           const SizedBox(height: 6),
           Text(
-            lyrics.synced ? 'Touche une ligne pour y sauter · appui long pour partager' : 'Appui long sur une ligne pour partager',
+            lyrics.synced ? context.l10n.lyricsHintSynced : context.l10n.lyricsHintPlain,
             style: SikaText.ui(11, color: ink.withValues(alpha: 0.55)),
           ),
         ],
@@ -1090,7 +1096,7 @@ class _ArtistCard extends ConsumerWidget {
                 children: [
                   Text(artist.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.rowTitle),
                   const SizedBox(height: 2),
-                  Text('Voir ses titres', style: SikaText.meta),
+                  Text(context.l10n.seeTheirSongs, style: SikaText.meta),
                 ],
               ),
             ),
@@ -1098,11 +1104,11 @@ class _ArtistCard extends ConsumerWidget {
             OutlinedButton.icon(
               onPressed: () {
                 ref.read(libraryProvider.notifier).toggleFollow(Artist(id: artist.id, name: artist.name, imageUrl: image));
-                showSnack(context, added ? 'Retiré de ta bibliothèque' : 'Ajouté à ta bibliothèque');
+                showSnack(context, added ? context.l10n.removedFromLibrary : context.l10n.addedToLibrary);
               },
               icon: added ? const SizedBox.shrink() : const SikaIcon('plus', size: 16),
               label: Text(
-                added ? 'Dans ta biblio' : 'Ajouter',
+                added ? context.l10n.inYourLibrary : context.l10n.add,
                 style: SikaText.ui(13, w: FontWeight.w700, color: added ? SikaColors.onYellow : SikaColors.text),
               ),
               style: OutlinedButton.styleFrom(

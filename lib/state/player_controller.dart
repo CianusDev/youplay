@@ -14,6 +14,7 @@ import '../data/youtube_source.dart';
 import 'download_manager.dart';
 import 'library_store.dart';
 import 'providers.dart';
+import '../l10n/l10n.dart';
 
 enum SikaRepeat { off, all, one }
 
@@ -180,10 +181,10 @@ class PlayerController extends Notifier<PlayerUi> {
       if (n <= 2) {
         await _reload(idx, pos);
       } else if (idx + 1 < state.queue.length) {
-        if (_inForeground) state = state.copyWith(error: '« ${cur.title} » est illisible, titre suivant');
+        if (_inForeground) state = state.copyWith(error: L10n.current.trackUnplayableNext(cur.title));
         await _reload(idx + 1, Duration.zero);
       } else {
-        if (_inForeground) state = state.copyWith(error: 'Lecture impossible : ${e.message ?? 'erreur réseau'}');
+        if (_inForeground) state = state.copyWith(error: L10n.current.playbackFailedReason(e.message ?? L10n.current.networkError));
       }
     } catch (_) {
       // Rien de plus à tenter : on laisse le lecteur en pause.
@@ -374,18 +375,18 @@ class PlayerController extends Notifier<PlayerUi> {
 
   /// Lance une liste de titres. Retourne un message d'erreur si rien n'est jouable.
   Future<String?> playQueue(List<Track> tracks, {int start = 0, CollectionRef? source, bool? shuffle, bool radio = false}) async {
-    if (tracks.isEmpty) return 'Aucun titre à lire';
+    if (tracks.isEmpty) return L10n.current.nothingToPlay;
     final dl = ref.read(downloadsProvider);
     // Anciens titres Audius : lisibles seulement s'ils sont téléchargés.
     final startTrack = tracks[start.clamp(0, tracks.length - 1)];
     tracks = tracks.where((t) => isYoutubeTrack(t.id) || dl.isDownloaded(t.id)).toList();
-    if (tracks.isEmpty) return 'Ce titre venait d\'Audius (source retirée) : cherche-le sur YouTube';
+    if (tracks.isEmpty) return L10n.current.audiusRemoved;
     var list = tracks;
     var startIdx = tracks.contains(startTrack) ? tracks.indexOf(startTrack) : 0;
     if (dl.offlineMode) {
       final target = tracks[startIdx];
       list = tracks.where((t) => dl.isDownloaded(t.id)).toList();
-      if (list.isEmpty) return 'Mode hors ligne : aucun de ces titres n\'est téléchargé';
+      if (list.isEmpty) return L10n.current.offlineNoneDownloaded;
       startIdx = list.indexOf(target).clamp(0, list.length - 1);
     }
     _flushListen();
@@ -408,8 +409,8 @@ class PlayerController extends Notifier<PlayerUi> {
       _save();
       _prefetchNext();
     } catch (e) {
-      state = state.copyWith(error: 'Lecture impossible : $e');
-      return 'Lecture impossible';
+      state = state.copyWith(error: L10n.current.playbackFailedReason('$e'));
+      return L10n.current.playbackFailed;
     }
     return null;
   }
@@ -418,7 +419,7 @@ class PlayerController extends Notifier<PlayerUi> {
   Future<String?> playRadio() async {
     final yt = ref.read(youtubeProvider);
     final lib = ref.read(libraryProvider);
-    const src = CollectionRef(CollectionKind.trending, 'radio', title: 'Ta Radio YouPlay');
+    final src = CollectionRef(CollectionKind.trending, 'radio', title: L10n.current.yourRadio);
     final last = lib.history.where((h) => isYoutubeTrack(h.track.id)).firstOrNull?.track;
     if (last != null) {
       final rel = await yt.related(last.id);

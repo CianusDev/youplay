@@ -10,6 +10,7 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../data/media_storage.dart';
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/providers.dart';
 import '../../theme/sika_tokens.dart';
@@ -79,7 +80,7 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
     try {
       await action();
     } catch (_) {
-      if (mounted) showSnack(context, 'Opération impossible');
+      if (mounted) showSnack(context, context.l10n.actionFailed);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -97,7 +98,7 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
 
   Future<void> _save() => _run(() async {
         final path = await MediaStorage.savePicture(await _png(), 'YouPlay-${DateTime.now().millisecondsSinceEpoch}.png');
-        if (mounted) showSnack(context, path == null ? 'Enregistrement impossible' : 'Image enregistrée dans Pictures/YouPlay');
+        if (mounted) showSnack(context, path == null ? context.l10n.saveFailed : context.l10n.imageSaved);
       });
 
   @override
@@ -116,14 +117,14 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
         surfaceTintColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded, color: SikaColors.text),
-          tooltip: 'Retour aux lignes',
+          tooltip: context.l10n.backToLines,
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: Text('Personnaliser', style: SikaText.display(20, ls: -0.4)),
+        title: Text(context.l10n.customize, style: SikaText.display(20, ls: -0.4)),
         actions: [
           IconButton(
             icon: const Icon(Icons.close_rounded, color: SikaColors.text),
-            tooltip: 'Fermer',
+            tooltip: context.l10n.close,
             // Ferme l'éditeur ET la feuille de choix des lignes.
             onPressed: () => Navigator.of(context)
               ..pop()
@@ -213,14 +214,14 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Text('Fond', style: SikaText.ui(13, w: FontWeight.w700, color: SikaColors.textSoft)),
+                  Text(context.l10n.background, style: SikaText.ui(13, w: FontWeight.w700, color: SikaColors.textSoft)),
                   const Spacer(),
                   SegmentedButton<_Bg>(
                     showSelectedIcon: false,
                     style: _segStyle,
                     segments: [
-                      const ButtonSegment(value: _Bg.color, label: Text('Couleur')),
-                      ButtonSegment(value: _Bg.artwork, label: const Text('Pochette'), enabled: t.artworkUrl != null),
+                      ButtonSegment(value: _Bg.color, label: Text(context.l10n.color)),
+                      ButtonSegment(value: _Bg.artwork, label: Text(context.l10n.artwork), enabled: t.artworkUrl != null),
                     ],
                     selected: {_bg},
                     onSelectionChanged: (v) => setState(() => _bg = v.first),
@@ -245,7 +246,7 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
                     itemBuilder: (_, i) => Semantics(
                       button: true,
                       selected: i == _palette,
-                      label: i == 0 ? 'Couleur de la pochette' : 'Couleur ${i + 1}',
+                      label: i == 0 ? context.l10n.artworkColor : context.l10n.colorN(i + 1),
                       child: GestureDetector(
                         onTap: () => setState(() => _palette = i),
                         child: AnimatedContainer(
@@ -271,15 +272,15 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  Text('Texte', style: SikaText.ui(13, w: FontWeight.w700, color: SikaColors.textSoft)),
+                  Text(context.l10n.text, style: SikaText.ui(13, w: FontWeight.w700, color: SikaColors.textSoft)),
                   const Spacer(),
                   SegmentedButton<_Size>(
                     showSelectedIcon: false,
                     style: _segStyle,
-                    segments: const [
-                      ButtonSegment(value: _Size.s, label: Text('Petit')),
-                      ButtonSegment(value: _Size.m, label: Text('Moyen')),
-                      ButtonSegment(value: _Size.l, label: Text('Grand')),
+                    segments: [
+                      ButtonSegment(value: _Size.s, label: Text(context.l10n.sizeSmall)),
+                      ButtonSegment(value: _Size.m, label: Text(context.l10n.sizeMedium)),
+                      ButtonSegment(value: _Size.l, label: Text(context.l10n.sizeLarge)),
                     ],
                     selected: {_size},
                     onSelectionChanged: (v) => setState(() => _size = v.first),
@@ -295,15 +296,15 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
                 children: [
                   _RoundAction(
                     icon: Icons.copy_rounded,
-                    label: 'Copier',
+                    label: context.l10n.copy,
                     onTap: () async {
                       await Clipboard.setData(ClipboardData(text: _quote));
-                      if (context.mounted) showSnack(context, 'Paroles copiées');
+                      if (context.mounted) showSnack(context, context.l10n.lyricsCopied);
                     },
                   ),
                   if (DownloadManager.supported) ...[
                     const SizedBox(width: 10),
-                    _RoundAction(icon: Icons.download_rounded, label: 'Enregistrer', onTap: _busy ? null : _save),
+                    _RoundAction(icon: Icons.download_rounded, label: context.l10n.save, onTap: _busy ? null : _save),
                   ],
                   const SizedBox(width: 12),
                   Expanded(
@@ -312,7 +313,7 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
                       icon: _busy
                           ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2.4, color: SikaColors.onYellow))
                           : const Icon(Icons.ios_share_rounded, size: 20),
-                      label: Text('Partager', style: SikaText.ui(15, w: FontWeight.w800, color: SikaColors.onYellow)),
+                      label: Text(context.l10n.share, style: SikaText.ui(15, w: FontWeight.w800, color: SikaColors.onYellow)),
                       style: FilledButton.styleFrom(
                         minimumSize: const Size(0, 52),
                         backgroundColor: SikaColors.yellow,

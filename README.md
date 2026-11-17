@@ -38,6 +38,7 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 - **Sleep timer**: 5 to 60 minutes, or at the end of the current song.
 - **Endless radio** from the last song you played.
 - **Automatic updates**: every new version is offered inside the app.
+- **English and French**: follows your phone's language, or pick one in Settings.
 - **Private**: no account, no server, everything stays on your phone.
 
 ## Install
@@ -78,7 +79,7 @@ Every push to `main` builds a signed APK and publishes it as a GitHub release ([
 
 ## Contributing
 
-Issues and pull requests are welcome. For a big change, open an issue first so we can discuss it. Please run `flutter analyze` and `flutter test` before submitting.
+Issues and pull requests are welcome. The app is available in English and French; to add a language, copy `lib/l10n/app_en.arb` to `app_<code>.arb`, translate it and open a pull request. For a big change, open an issue first so we can discuss it. Please run `flutter analyze` and `flutter test` before submitting.
 
 ## Disclaimer
 

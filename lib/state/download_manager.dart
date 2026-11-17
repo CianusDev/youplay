@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
@@ -72,6 +73,8 @@ class DownloadsState {
     this.offlineMode = false,
     this.smartDownload = true,
     this.paused = false,
+    this.wifiOnly = false,
+    this.onWifi = false,
   });
 
   final Map<String, DownloadItem> items;
@@ -79,6 +82,13 @@ class DownloadsState {
   final bool offlineMode;
   final bool smartDownload;
   final bool paused;
+  /// Réglage « Économiser les données mobiles » : télécharger uniquement en Wi-Fi.
+  final bool wifiOnly;
+  /// Réseau actuel sans compteur (Wi-Fi ou Ethernet). Non sauvegardé, mis à jour en direct.
+  final bool onWifi;
+
+  /// Des titres attendent un Wi-Fi pour se télécharger.
+  bool get waitingForWifi => wifiOnly && !onWifi && active.isNotEmpty;
 
   bool isDownloaded(String trackId) => items[trackId]?.status == DownloadStatus.done;
   /// Fichier local du titre, s'il existe encore (il peut avoir été supprimé depuis l'explorateur).
@@ -124,6 +134,8 @@ class DownloadsState {
     bool? offlineMode,
     bool? smartDownload,
     bool? paused,
+    bool? wifiOnly,
+    bool? onWifi,
   }) =>
       DownloadsState(
         items: items ?? this.items,
@@ -131,6 +143,8 @@ class DownloadsState {
         offlineMode: offlineMode ?? this.offlineMode,
         smartDownload: smartDownload ?? this.smartDownload,
         paused: paused ?? this.paused,
+        wifiOnly: wifiOnly ?? this.wifiOnly,
+        onWifi: onWifi ?? this.onWifi,
       );
 }
 
@@ -139,6 +153,10 @@ class DownloadManager extends Notifier<DownloadsState> {
   static const _key = 'sika.downloads.v1';
 
   bool _working = false;
+  StreamSubscription<List<ConnectivityResult>>? _net;
+
+  /// Téléchargements suspendus : en pause, ou « Wi-Fi uniquement » sans Wi-Fi.
+  bool get _blocked => state.paused || (state.wifiOnly && !state.onWifi);
   StreamSubscription<List<int>>? _current;
   Completer<void>? _abort;
 
@@ -163,10 +181,19 @@ class DownloadManager extends Notifier<DownloadsState> {
           collections: (j['collections'] as List).cast<Map<String, dynamic>>().map(DownloadedCollection.fromJson).toList(),
           offlineMode: j['offline'] as bool? ?? false,
           smartDownload: j['smart'] as bool? ?? true,
+          wifiOnly: j['wifiOnly'] as bool? ?? false,
         );
       } catch (_) {}
     }
-    if (s.active.isNotEmpty) Future.microtask(_pump);
+    if (supported) {
+      // Réseau : dès qu'un Wi-Fi est détecté, les titres en attente se téléchargent ; en données
+      // mobiles avec « Wi-Fi uniquement », le téléchargement en cours est remis en attente.
+      final net = Connectivity();
+      _net = net.onConnectivityChanged.listen(_onNetwork);
+      net.checkConnectivity().then(_onNetwork).catchError((_) {});
+      ref.onDispose(() => _net?.cancel());
+    }
+    if (s.active.isNotEmpty && !s.wifiOnly) Future.microtask(_pump);
     return s;
   }
 
@@ -180,6 +207,7 @@ class DownloadManager extends Notifier<DownloadsState> {
               'collections': s.collections.map((c) => c.toJson()).toList(),
               'offline': s.offlineMode,
               'smart': s.smartDownload,
+              'wifiOnly': s.wifiOnly,
             }),
           );
     }
@@ -193,6 +221,29 @@ class DownloadManager extends Notifier<DownloadsState> {
   }
 
   void setOffline(bool v) => _set(state.copyWith(offlineMode: v));
+
+  void setWifiOnly(bool v) {
+    _set(state.copyWith(wifiOnly: v));
+    if (_blocked) {
+      _abortCurrent();
+    } else {
+      _pump();
+    }
+  }
+
+  void _onNetwork(List<ConnectivityResult> r) {
+    final wifi = r.contains(ConnectivityResult.wifi) || r.contains(ConnectivityResult.ethernet);
+    if (wifi == state.onWifi && _netKnown) return;
+    _netKnown = true;
+    _set(state.copyWith(onWifi: wifi), persist: false);
+    if (state.wifiOnly && !wifi) {
+      _abortCurrent(); // repris automatiquement au prochain Wi-Fi
+    } else {
+      _pump();
+    }
+  }
+
+  bool _netKnown = false;
   void setSmart(bool v, {Iterable<Track> liked = const []}) {
     _set(state.copyWith(smartDownload: v));
     if (v) enqueue(liked);
@@ -276,7 +327,7 @@ class DownloadManager extends Notifier<DownloadsState> {
     if (_working || !supported) return;
     _working = true;
     try {
-      while (!state.paused) {
+      while (!_blocked) {
         final next = state.items.values.where((i) => i.status == DownloadStatus.queued).toList()
           ..sort((a, b) => a.addedAt.compareTo(b.addedAt));
         if (next.isEmpty) break;

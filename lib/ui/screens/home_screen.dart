@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../data/youtube_source.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
@@ -25,32 +26,33 @@ class _Feed {
 
 final _year = DateTime.now().year;
 
-final _feeds = [
-  _Feed('Tout', const ['Damso', 'Gims', 'Beendo Z', 'Ninho', 'Tiakola', 'Aya Nakamura'], [
-    ('Nouveautés Rap FR', 'Les sorties rap du moment', 'nouveauté rap français $_year'),
-    ('Hits Afro', 'Afrobeats, Afro-pop', 'afrobeats hits $_year'),
-    ('Drill FR', 'Drill, Trap', 'drill français $_year'),
+// Titres et sous-titres traduits ; les requêtes YouTube restent en français (le catalogue visé).
+List<_Feed> _feeds(AppLocalizations l) => [
+  _Feed(l.chipAll, const ['Damso', 'Gims', 'Beendo Z', 'Ninho', 'Tiakola', 'Aya Nakamura'], [
+    (l.mixNewFrenchRap, l.mixNewFrenchRapSub, 'nouveauté rap français $_year'),
+    (l.mixAfroHits, 'Afrobeats, Afro-pop', 'afrobeats hits $_year'),
+    (l.mixFrenchDrill, 'Drill, Trap', 'drill français $_year'),
     ('Amapiano', 'Amapiano, Log drum', 'amapiano $_year'),
   ]),
-  _Feed('Rap FR', const ['Ninho', 'Damso', 'SDM', 'Jul', 'Tiakola', 'PLK'], [
-    ('Nouveautés Rap FR', 'Les sorties de la semaine', 'nouveauté rap français $_year'),
-    ('Rap Belge', 'Damso, Hamza, Shay…', 'rap belge $_year'),
-    ('Classiques Rap FR', 'Les incontournables', 'classiques rap français'),
+  _Feed(l.chipFrenchRap, const ['Ninho', 'Damso', 'SDM', 'Jul', 'Tiakola', 'PLK'], [
+    (l.mixNewFrenchRap, l.mixWeeklyReleases, 'nouveauté rap français $_year'),
+    (l.mixBelgianRap, 'Damso, Hamza, Shay…', 'rap belge $_year'),
+    (l.mixFrenchRapClassics, l.mixEssentials, 'classiques rap français'),
   ]),
   _Feed('Afro', const ['Burna Boy', 'Wizkid', 'Rema', 'Fally Ipupa', 'Tayc', 'Asake'], [
-    ('Hits Afro', 'Afrobeats, Afro-pop', 'afrobeats hits $_year'),
+    (l.mixAfroHits, 'Afrobeats, Afro-pop', 'afrobeats hits $_year'),
     ('Amapiano', 'Amapiano, Log drum', 'amapiano $_year'),
-    ('Coupé-décalé', 'Côte d\'Ivoire', 'coupé décalé $_year'),
+    ('Coupé-décalé', l.mixIvoryCoast, 'coupé décalé $_year'),
   ]),
   _Feed('Drill', const ['Gazo', 'Kerchak', 'Freeze Corleone', 'Central Cee', 'Ziak', 'Leto'], [
-    ('Drill FR', 'Drill, Trap', 'drill français $_year'),
-    ('UK Drill', 'Londres', 'uk drill $_year'),
-    ('Trap FR', 'Trap, Plugg', 'trap français $_year'),
+    (l.mixFrenchDrill, 'Drill, Trap', 'drill français $_year'),
+    ('UK Drill', l.mixLondon, 'uk drill $_year'),
+    (l.mixFrenchTrap, 'Trap, Plugg', 'trap français $_year'),
   ]),
   _Feed('Chill', const ['Tayc', 'Dadju', 'Joé Dwèt Filé', 'Tems', 'Aya Nakamura', 'Burna Boy'], [
     ('R&B Chill', 'Love songs, R&B', 'rnb français $_year'),
-    ('Afro Love', 'Afro-pop douce', 'afro love songs'),
-    ('Lo-fi Focus', 'Pour bosser', 'lofi focus'),
+    ('Afro Love', l.mixSoftAfroPop, 'afro love songs'),
+    ('Lo-fi Focus', l.mixForWork, 'lofi focus'),
   ]),
 ];
 
@@ -70,11 +72,11 @@ CollectionRef _mixRef(String query, String title) => CollectionRef(CollectionKin
 /// Pochette d'une recherche : première miniature des résultats (chargée à la demande).
 String? _artFor(WidgetRef ref, String query) => ref.watch(ytSongsProvider(query)).value?.firstOrNull?.artworkUrl;
 
-String _greeting() {
+String _greeting(AppLocalizations l) {
   final h = DateTime.now().hour;
-  if (h >= 5 && h < 12) return 'Bonjour';
-  if (h >= 12 && h < 18) return 'Bon après-midi';
-  return 'Bonsoir';
+  if (h >= 5 && h < 12) return l.goodMorning;
+  if (h >= 12 && h < 18) return l.goodAfternoon;
+  return l.goodEvening;
 }
 
 class HomeScreen extends ConsumerWidget {
@@ -84,7 +86,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final chip = ref.watch(homeChipProvider);
     final lib = ref.watch(libraryProvider);
-    final feed = _feeds[chip];
+    final l = context.l10n;
+    final feeds = _feeds(l);
+    final feed = feeds[chip];
 
     // Artistes : sur « Tout », tes plus écoutés d'abord, complétés par la sélection.
     final mine = chip == 0 ? lib.topArtists().where((a) => isYoutubeArtist(a.id)).map((a) => a.name).toList() : <String>[];
@@ -97,9 +101,9 @@ class HomeScreen extends ConsumerWidget {
     final mixes = [
       for (var i = 0; i + 1 < mixArtists.length && i < 6; i += 2)
         (
-          'Daily Mix ${i ~/ 2 + 1}',
-          '${mixArtists[i]}, ${mixArtists[i + 1]} et plus',
-          _mixRef('${mixArtists[i]} ${mixArtists[i + 1]}', 'Daily Mix ${i ~/ 2 + 1}'),
+          l.dailyMix(i ~/ 2 + 1),
+          l.artistsAndMore(mixArtists[i], mixArtists[i + 1]),
+          _mixRef('${mixArtists[i]} ${mixArtists[i + 1]}', l.dailyMix(i ~/ 2 + 1)),
         ),
     ];
     const mixVariants = [5, 2, 3];
@@ -110,7 +114,7 @@ class HomeScreen extends ConsumerWidget {
     }
 
     if (!YoutubeSource.supported) {
-      return const Scaffold(body: Center(child: EmptyState('YouPlay lit YouTube : utilise l\'app Android.')));
+      return Scaffold(body: Center(child: EmptyState(l.androidOnly)));
     }
 
     return Scaffold(
@@ -133,7 +137,7 @@ class HomeScreen extends ConsumerWidget {
                       height: 40,
                       decoration: const BoxDecoration(color: SikaColors.yellow, shape: BoxShape.circle),
                       alignment: Alignment.center,
-                      child: Text(lib.userName.characters.first.toUpperCase(), style: SikaText.display(16, color: SikaColors.onYellow)),
+                      child: Text(displayUserName(l, lib.userName).characters.first.toUpperCase(), style: SikaText.display(16, color: SikaColors.onYellow)),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -141,21 +145,21 @@ class HomeScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(_greeting(), style: SikaText.ui(12, color: SikaColors.textMuted)),
-                        Text(lib.userName, maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.userName),
+                        Text(_greeting(l), style: SikaText.ui(12, color: SikaColors.textMuted)),
+                        Text(displayUserName(l, lib.userName), maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.userName),
                       ],
                     ),
                   ),
-                  IconButtonSika(icon: 'bell', label: 'Notifications', onTap: () => showSnack(context, 'Aucune nouvelle notification')),
+                  IconButtonSika(icon: 'bell', label: l.notifications, onTap: () => showSnack(context, l.noNotifications)),
                   const SizedBox(width: 4),
-                  IconButtonSika(icon: 'settings', label: 'Réglages', onTap: () => showSettingsSheet(context)),
+                  IconButtonSika(icon: 'settings', label: l.settingsTitle, onTap: () => showSettingsSheet(context)),
                 ],
               ),
             ),
             // 2. Filtres
             Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 4),
-              child: ChipRow(labels: [for (final f in _feeds) f.label], selected: chip, onSelect: ref.read(homeChipProvider.notifier).set),
+              child: ChipRow(labels: [for (final f in feeds) f.label], selected: chip, onSelect: ref.read(homeChipProvider.notifier).set),
             ),
             // 3. Accès rapides : titres likés + artistes
             Padding(
@@ -170,12 +174,12 @@ class HomeScreen extends ConsumerWidget {
                 childAspectRatio: ((MediaQuery.sizeOf(context).width - 48) / 2) / 56,
                 children: [
                   QuickPickTile(
-                    title: 'Titres likés',
+                    title: l.likedSongs,
                     seed: 'likes',
                     variant: 1,
                     onTap: () => openCollection(
                       context,
-                      CollectionRef(CollectionKind.likes, 'me', title: 'Titres likés', subtitle: '${lib.likedTracks.length} titres'),
+                      CollectionRef(CollectionKind.likes, 'me', title: l.likedSongs, subtitle: l.songCount(lib.likedTracks.length)),
                     ),
                   ),
                   for (final name in picks)
@@ -194,7 +198,7 @@ class HomeScreen extends ConsumerWidget {
             // 4. Radio
             const _RadioCard(),
             // 5. Mix du jour (à partir de tes artistes)
-            SectionHeader('Tes mix du jour', action: 'Tout voir', onAction: () => context.go('/library')),
+            SectionHeader(l.yourDailyMixes, action: l.seeAll, onAction: () => context.go('/library')),
             SizedBox(
               height: 222,
               child: ListView.separated(
@@ -213,7 +217,7 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
             // 6. Nouveautés
-            const SectionHeader('Nouveautés'),
+            SectionHeader(l.newReleases),
             SizedBox(
               height: 222,
               child: ListView.separated(
@@ -267,7 +271,7 @@ class _RadioCardState extends ConsumerState<_RadioCard> {
         context.push('/player');
       }
     } catch (_) {
-      if (mounted) showSnack(context, 'Radio indisponible. Vérifie ta connexion.');
+      if (mounted) showSnack(context, context.l10n.radioUnavailable);
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -302,12 +306,12 @@ class _RadioCardState extends ConsumerState<_RadioCard> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('NOUVEAU POUR TOI', style: SikaText.eyebrow.copyWith(color: SikaColors.onYellow)),
+                      Text(context.l10n.newForYou, style: SikaText.eyebrow.copyWith(color: SikaColors.onYellow)),
                       const SizedBox(height: 6),
-                      Text('Ta Radio YouPlay', style: SikaText.heroCard.copyWith(color: SikaColors.onYellow)),
+                      Text(context.l10n.yourRadio, style: SikaText.heroCard.copyWith(color: SikaColors.onYellow)),
                       const SizedBox(height: 6),
                       Text(
-                        'Un flux infini, calé sur tes 30 derniers jours.',
+                        context.l10n.yourRadioSub,
                         style: SikaText.ui(13, color: SikaColors.onYellow),
                       ),
                     ],
@@ -343,7 +347,7 @@ class _RecentArtists extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader('Écoutés récemment'),
+        SectionHeader(context.l10n.recentlyPlayed),
         SizedBox(
           height: 124,
           child: ListView.separated(

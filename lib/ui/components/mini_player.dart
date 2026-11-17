@@ -9,6 +9,7 @@ import '../../theme/sika_tokens.dart';
 import 'cover_art.dart';
 import 'play_button.dart';
 import 'sika_icon.dart';
+import '../../l10n/l10n.dart';
 
 class MiniPlayer extends ConsumerWidget {
   const MiniPlayer({super.key});
@@ -36,7 +37,7 @@ class MiniPlayer extends ConsumerWidget {
                 Expanded(
                   child: Semantics(
                     button: true,
-                    label: 'Ouvrir le lecteur',
+                    label: context.l10n.openPlayer,
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: () => context.push('/player'),
@@ -69,7 +70,7 @@ class MiniPlayer extends ConsumerWidget {
                                     ],
                                     Flexible(
                                       child: Text(
-                                        '${t.artist.name} · ${offline ? 'Hors ligne' : 'Cet appareil'}',
+                                        '${t.artist.name} · ${offline ? context.l10n.offlineBadge : context.l10n.thisDevice}',
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: SikaText.ui(12, color: SikaColors.textSoft),
@@ -87,7 +88,7 @@ class MiniPlayer extends ConsumerWidget {
                 ),
                 IconButtonSika(
                   icon: liked ? 'heart-filled' : 'heart',
-                  label: liked ? 'Retirer des titres likés' : 'Ajouter aux titres likés',
+                  label: liked ? context.l10n.removeFromLiked : context.l10n.addToLiked,
                   color: liked ? SikaColors.yellow : SikaColors.text,
                   onTap: () => ref.read(libraryProvider.notifier).toggleLike(t),
                 ),

@@ -1,0 +1,622 @@
+{
+  "@@locale": "en",
+  "notificationChannelName": "YouPlay playback",
+  "settingsTitle": "Settings",
+  "firstName": "First name",
+  "yourFirstName": "Your first name",
+  "edit": "Edit",
+  "offlineMode": "Offline mode",
+  "offlineModeSubtitle": "Only play downloaded songs",
+  "settingsAbout": "YouPlay plays YouTube through NewPipeExtractor. Lyrics provided by LRCLIB. Your likes, playlists, history and downloads stay on this device.",
+  "installedVersion": "Installed version",
+  "versionLabel": "Version {version}",
+  "@versionLabel": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updatesTitle": "Updates",
+  "upToDateSuffix": "{version} · up to date",
+  "@upToDateSuffix": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "updateCheckFailed": "Couldn't check: check your connection",
+  "check": "Check",
+  "backgroundPlayback": "Background playback",
+  "noBatteryRestriction": "No battery restrictions",
+  "backgroundPlaybackHint": "Stops your phone from cutting the music",
+  "enabled": "On",
+  "allow": "Allow",
+  "language": "Language",
+  "languageSystem": "Phone language",
+  "updateDownloadFailed": "The download failed. Check your connection and try again.",
+  "megabytes": "{size} MB",
+  "@megabytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "updateAvailable": "Update available",
+  "downloadingPercent": "Downloading… {percent}%",
+  "@downloadingPercent": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "later": "Later",
+  "retry": "Retry",
+  "update": "Update",
+  "navHome": "Home",
+  "navSearch": "Search",
+  "navLibrary": "Library",
+  "navDownloads": "Downloads",
+  "kindAlbum": "Album",
+  "kindPlaylist": "Playlist",
+  "kindMix": "Mix",
+  "kindArtist": "Artist",
+  "connectionError": "Couldn't connect. Check your network.",
+  "removeFromLiked": "Remove from liked songs",
+  "addToLiked": "Add to liked songs",
+  "addedToLiked": "Added to liked songs",
+  "removedFromLiked": "Removed from liked songs",
+  "playNext": "Play next",
+  "playingNext": "Plays next",
+  "addToQueue": "Add to queue",
+  "addedToQueue": "Added to queue",
+  "addToPlaylist": "Add to a playlist",
+  "removeFromThisPlaylist": "Remove from this playlist",
+  "removedFromPlaylist": "Removed from playlist",
+  "deleteDownload": "Delete download",
+  "cancelDownload": "Cancel download",
+  "download": "Download",
+  "downloadStarted": "Download started",
+  "downloadDeleted": "Download deleted",
+  "viewArtist": "View artist",
+  "share": "Share",
+  "newPlaylist": "New playlist",
+  "playlistName": "Playlist name",
+  "addedToPlaylistPath": "Added to “{name}” · {path}",
+  "@addedToPlaylistPath": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "songCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@songCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cancel": "Cancel",
+  "ok": "OK",
+  "deletePlaylistTitle": "Delete “{name}”?",
+  "@deletePlaylistTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistBodyFolder": "The playlist and its folder {path} will be removed. Downloaded songs are kept in Music/YouPlay.",
+  "@deletePlaylistBodyFolder": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePlaylistBody": "The playlist will be removed from your library.",
+  "delete": "Delete",
+  "playlistDeletedKeptFiles": "Playlist deleted · {count, plural, =1{1 personal file left} other{{count} personal files left}} in the folder",
+  "@playlistDeletedKeptFiles": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playlistDeletedSongsKept": "Playlist deleted · songs kept in Music/YouPlay",
+  "playlistDeleted": "Playlist deleted",
+  "renamePlaylist": "Rename playlist",
+  "renamedToPath": "Renamed “{name}” · {path}",
+  "@renamedToPath": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "renamedTo": "Renamed “{name}”",
+  "@renamedTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "openPlayer": "Open player",
+  "pause": "Pause",
+  "play": "Play",
+  "trackOptions": "Song options",
+  "queued": "Waiting",
+  "failedRetry": "Failed · retry",
+  "offlineBadge": "Offline",
+  "playbackPosition": "Playback position",
+  "positionOf": "{position} of {duration}",
+  "@positionOf": {
+    "placeholders": {
+      "position": {
+        "type": "String"
+      },
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "thisDevice": "This device",
+  "percent": "{value}%",
+  "@percent": {
+    "placeholders": {
+      "value": {
+        "type": "int"
+      }
+    }
+  },
+  "srcNowPlaying": "NOW PLAYING",
+  "srcAlbum": "PLAYING FROM ALBUM",
+  "srcPlaylist": "PLAYING FROM PLAYLIST",
+  "srcArtist": "PLAYING FROM ARTIST",
+  "srcRadio": "PLAYING FROM RADIO",
+  "srcTrending": "PLAYING FROM TRENDING",
+  "srcMix": "PLAYING FROM MIX",
+  "srcSearch": "PLAYING FROM SEARCH",
+  "srcOffline": "PLAYING OFFLINE",
+  "nothingPlaying": "Nothing playing.",
+  "close": "Close",
+  "closePlayer": "Close player",
+  "options": "Options",
+  "shuffleOff": "Turn off shuffle",
+  "shuffleOn": "Turn on shuffle",
+  "previous": "Previous",
+  "next": "Next",
+  "repeatOff": "Repeat: off",
+  "repeatAll": "Repeat: all",
+  "repeatOne": "Repeat: this song",
+  "sleepTimer": "Sleep timer",
+  "sleepTimerOn": "Sleep timer: on",
+  "queue": "Queue",
+  "sleepStopsAt": "Playback stops at {time}",
+  "@sleepStopsAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "sleepStopsEndOfSong": "Stops at the end of the current song",
+  "sleepHint": "Playback pauses after the chosen time.",
+  "durationMinutes": "{count, plural, =1{1 minute} other{{count} minutes}}",
+  "@durationMinutes": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "oneHour": "1 hour",
+  "stopsIn": "Stops in {duration}",
+  "@stopsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "endOfSong": "End of song",
+  "stopsAtEndOfSong": "Stops at the end of the song",
+  "turnOffTimer": "Turn off the timer",
+  "timerOff": "Timer turned off",
+  "searchingLyrics": "Looking for lyrics…",
+  "lyricsUnavailable": "No lyrics available for this song.",
+  "lyrics": "Lyrics",
+  "syncApproxAdjust": "Approx. sync · adjust",
+  "expandLyrics": "Expand lyrics",
+  "maxLines": "{count} lines max",
+  "@maxLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "chooseLyrics": "Pick lyrics",
+  "tapUpToLines": "Tap up to {count} lines",
+  "@tapUpToLines": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "linesSelected": "{n} / {max} {n, plural, =1{line} other{lines}}",
+  "@linesSelected": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "tapLinesToPick": "Tap lines to pick them",
+  "nextWithLines": "Next · {n, plural, =1{1 line} other{{n} lines}}",
+  "@nextWithLines": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "wrongLyrics": "Wrong lyrics?",
+  "wrongLyricsHint": "We'll drop this text for this song and look for another version.",
+  "searchingOtherLyrics": "Looking for other lyrics…",
+  "findOtherLyrics": "Find other lyrics",
+  "shareLyrics": "Share lyrics",
+  "reportWrongLyrics": "Report wrong lyrics",
+  "sync": "Sync",
+  "lyricsEarlier": "Lyrics earlier",
+  "lyricsLater": "Lyrics later",
+  "secondsValue": "{value} s",
+  "@secondsValue": {
+    "placeholders": {
+      "value": {
+        "type": "String"
+      }
+    }
+  },
+  "clipOffset": "Clip {offset}",
+  "@clipOffset": {
+    "placeholders": {
+      "offset": {
+        "type": "String"
+      }
+    }
+  },
+  "alignToClip": "Align with the video",
+  "lyricsHintSynced": "Tap a line to jump to it · long-press to share",
+  "lyricsHintPlain": "Long-press a line to share",
+  "seeTheirSongs": "See their songs",
+  "removedFromLibrary": "Removed from your library",
+  "addedToLibrary": "Added to your library",
+  "inYourLibrary": "In your library",
+  "add": "Add",
+  "chipAll": "All",
+  "chipFrenchRap": "French rap",
+  "mixNewFrenchRap": "New French Rap",
+  "mixNewFrenchRapSub": "Today's rap releases",
+  "mixAfroHits": "Afro Hits",
+  "mixFrenchDrill": "French Drill",
+  "mixWeeklyReleases": "This week's releases",
+  "mixBelgianRap": "Belgian Rap",
+  "mixFrenchRapClassics": "French Rap Classics",
+  "mixEssentials": "The essentials",
+  "mixIvoryCoast": "Ivory Coast",
+  "mixLondon": "London",
+  "mixFrenchTrap": "French Trap",
+  "mixSoftAfroPop": "Soft Afro-pop",
+  "mixForWork": "For working",
+  "goodMorning": "Good morning",
+  "goodAfternoon": "Good afternoon",
+  "goodEvening": "Good evening",
+  "dailyMix": "Daily Mix {n}",
+  "@dailyMix": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "artistsAndMore": "{a}, {b} and more",
+  "@artistsAndMore": {
+    "placeholders": {
+      "a": {
+        "type": "String"
+      },
+      "b": {
+        "type": "String"
+      }
+    }
+  },
+  "androidOnly": "YouPlay plays YouTube: use the Android app.",
+  "notifications": "Notifications",
+  "noNotifications": "No new notifications",
+  "likedSongs": "Liked songs",
+  "yourDailyMixes": "Your daily mixes",
+  "seeAll": "See all",
+  "newReleases": "New releases",
+  "radioUnavailable": "Radio unavailable. Check your connection.",
+  "newForYou": "NEW FOR YOU",
+  "yourRadio": "Your YouPlay Radio",
+  "yourRadioSub": "An endless stream, tuned to your last 30 days.",
+  "recentlyPlayed": "Recently played",
+  "genrePodcasts": "Podcasts",
+  "genreFocus": "Focus",
+  "genreTraditional": "Traditional",
+  "genreElectro": "Electro",
+  "searchTitle": "Search",
+  "searchHint": "Artists, songs, playlists…",
+  "clear": "Clear",
+  "voiceSearch": "Voice search",
+  "voiceSearchHint": "Use your keyboard's mic to dictate",
+  "browseAll": "Browse all",
+  "recentSearches": "Recent searches",
+  "trendingThisWeek": "Trending this week",
+  "top50France": "Top 50 — France",
+  "updatedContinuously": "Always up to date",
+  "searchAndroidOnly": "YouTube search works in the Android app.",
+  "noResultsFor": "No results for “{query}”.",
+  "@noResultsFor": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "resultsFor": "Results for ",
+  "didYouMean": "Did you mean ",
+  "topResult": "Top result",
+  "artistFollowers": "Artist · {count} followers",
+  "@artistFollowers": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "songBy": "Song · {artist}",
+  "@songBy": {
+    "placeholders": {
+      "artist": {
+        "type": "String"
+      }
+    }
+  },
+  "songs": "Songs",
+  "artists": "Artists",
+  "albumsAndPlaylists": "Albums and playlists",
+  "chipPlaylists": "Playlists",
+  "chipArtists": "Artists",
+  "chipAlbums": "Albums",
+  "chipPodcasts": "Podcasts",
+  "kindPodcast": "Podcast",
+  "kindSong": "Song",
+  "libraryTitle": "Library",
+  "searchInLibrary": "Search in library",
+  "createPlaylist": "Create playlist",
+  "searchYourLibrary": "Search your library",
+  "sortAlphabetical": "Alphabetical",
+  "sortRecent": "Recent",
+  "showAsList": "Show as list",
+  "showAsGrid": "Show as grid",
+  "emptyArtists": "Follow artists to find them here.",
+  "emptyAlbums": "No saved albums.",
+  "emptyPodcasts": "No saved podcasts.",
+  "emptyDownloadsYet": "Nothing downloaded yet.",
+  "emptyHere": "Nothing here yet.",
+  "unpin": "Unpin",
+  "pin": "Pin",
+  "removeFromLibrary": "Remove from library",
+  "unfollow": "Unfollow",
+  "rename": "Rename",
+  "deletePlaylist": "Delete playlist",
+  "yourMonthInMusic": "Your month in music",
+  "statMinutes": "minutes",
+  "statPlays": "plays",
+  "statArtists": "artists",
+  "statsEmpty": "Listen to some music to see your stats here.",
+  "topArtists": "Most played artists",
+  "playsCount": "{count, plural, =1{1 play} other{{count} plays}}",
+  "@playsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "genres": "Genres",
+  "monthStatsSub": "Artists, genres and listening minutes",
+  "gigabytes": "{size} GB",
+  "@gigabytes": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "downloadsTitle": "Downloads",
+  "downloadsWebOnly": "Offline downloads are available in the Android app, not in the web version.",
+  "inProgressCount": "In progress · {count}",
+  "@inProgressCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "resumeAll": "Resume all",
+  "pauseAll": "Pause all",
+  "downloadsEmpty": "Nothing here yet. Tap ↓ on a song or a playlist.",
+  "removeFromDevice": "Remove from device",
+  "offlineOnSub": "On · only your downloads are played",
+  "offlineOffSub": "Off · streaming allowed",
+  "smartDownload": "Smart download",
+  "smartDownloadSub": "Keep your liked songs available offline",
+  "storage": "Storage",
+  "storageUsed": "{size} used · {count, plural, =1{1 song} other{{count} songs}}",
+  "@storageUsed": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "musicSize": "Music · {size}",
+  "@musicSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "podcastsSize": "Podcasts · {size}",
+  "@podcastsSize": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "top50": "Top 50",
+  "eyebrowTrending": "TRENDING",
+  "eyebrowMix": "MIX",
+  "eyebrowPlaylist": "PLAYLIST",
+  "eyebrowArtist": "ARTIST",
+  "eyebrowAlbum": "ALBUM",
+  "eyebrowOffline": "OFFLINE",
+  "trendingDescription": "The songs getting the most plays right now.",
+  "playlistFolderOnPhone": "Folder on your phone: {path}",
+  "@playlistFolderOnPhone": {
+    "placeholders": {
+      "path": {
+        "type": "String"
+      }
+    }
+  },
+  "playlistEmptyHint": "Add songs with “… › Add to a playlist”.",
+  "downloadedSongs": "Downloaded songs",
+  "searchIn": "Search in {name}",
+  "@searchIn": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "noSongsYet": "No songs yet.",
+  "noResults": "No results.",
+  "back": "Back",
+  "searchInPlaylist": "Search in playlist",
+  "addToLibrary": "Add to library",
+  "downloadingSongs": "Downloading {count, plural, =1{1 song} other{{count} songs}}",
+  "@downloadingSongs": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "playlistOptions": "Playlist options",
+  "actionFailed": "Couldn't do that",
+  "saveFailed": "Couldn't save",
+  "imageSaved": "Image saved to Pictures/YouPlay",
+  "backToLines": "Back to lines",
+  "customize": "Customize",
+  "background": "Background",
+  "color": "Color",
+  "artwork": "Artwork",
+  "artworkColor": "Artwork color",
+  "colorN": "Color {n}",
+  "@colorN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "text": "Text",
+  "sizeSmall": "Small",
+  "sizeMedium": "Medium",
+  "sizeLarge": "Large",
+  "copy": "Copy",
+  "lyricsCopied": "Lyrics copied",
+  "save": "Save",
+  "defaultUserName": "Listener",
+  "myPlaylistN": "My playlist #{n}",
+  "@myPlaylistN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "myPlaylist": "My playlist",
+  "trackUnplayableNext": "“{title}” can't be played, skipping to the next song",
+  "@trackUnplayableNext": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "playbackFailedReason": "Playback failed: {reason}",
+  "@playbackFailedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "networkError": "network error",
+  "playbackFailed": "Playback failed",
+  "nothingToPlay": "Nothing to play",
+  "audiusRemoved": "This song came from Audius (source removed): search for it on YouTube",
+  "offlineNoneDownloaded": "Offline mode: none of these songs are downloaded",
+  "durationMin": "{m} min",
+  "@durationMin": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHourMin": "{h} hr {m} min",
+  "@durationHourMin": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "m": {
+        "type": "String"
+      }
+    }
+  },
+  "untitled": "Untitled",
+  "saveMobileData": "Save mobile data",
+  "saveMobileDataSub": "Download on Wi-Fi only",
+  "waitingForWifi": "Waiting for Wi-Fi",
+  "waitingForWifiBanner": "Downloads will start automatically as soon as you're on Wi-Fi."
+}

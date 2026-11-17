@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../data/youtube_source.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
@@ -45,40 +46,42 @@ class CollectionData {
 
 String _countMeta(String owner, List<Track> t) {
   final total = t.fold(Duration.zero, (s, x) => s + x.duration);
-  return '$owner · ${t.length} titre${t.length > 1 ? 's' : ''} · ${formatTotal(total)}';
+  return '$owner · ${L10n.current.songCount(t.length)} · ${formatTotal(total)}';
 }
 
 final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>((ref, c) async {
+  ref.watch(appLocaleProvider); // recalcul des textes quand la langue change dans les réglages
+  final l = L10n.current;
   switch (c.kind) {
     case CollectionKind.trending:
       final t = await ref.watch(ytSongsProvider('top 50 france ${DateTime.now().year}').future);
       return CollectionData(
-        title: 'Top 50',
-        eyebrow: 'TENDANCES',
+        title: l.top50,
+        eyebrow: l.eyebrowTrending,
         meta: _countMeta('YouTube', t),
         tracks: t,
-        description: 'Les titres qui tournent le plus en ce moment.',
+        description: l.trendingDescription,
       );
     // Anciennes collections Audius enregistrées : recherche YouTube sur leur titre.
     case CollectionKind.playlist || CollectionKind.artist || CollectionKind.genre || CollectionKind.query:
       final q = c.title.isNotEmpty ? c.title : c.id;
       final t = await ref.watch(ytSongsProvider(q).future);
-      return CollectionData(title: q, eyebrow: 'MIX', meta: _countMeta('YouTube', t), tracks: t, artworkUrl: c.artworkUrl);
+      return CollectionData(title: q, eyebrow: l.eyebrowMix, meta: _countMeta('YouTube', t), tracks: t, artworkUrl: c.artworkUrl);
     case CollectionKind.likes:
       final lib = ref.watch(libraryProvider);
-      return CollectionData(title: 'Titres likés', eyebrow: 'PLAYLIST', meta: _countMeta(lib.userName, lib.likedTracks), tracks: lib.likedTracks);
+      return CollectionData(title: l.likedSongs, eyebrow: l.eyebrowPlaylist, meta: _countMeta(displayUserName(l, lib.userName), lib.likedTracks), tracks: lib.likedTracks);
     case CollectionKind.mine:
       final lib = ref.watch(libraryProvider);
       final p = lib.myPlaylists.where((p) => p.id == c.id).firstOrNull;
       if (p == null) throw StateError('Playlist supprimée');
       return CollectionData(
         title: p.name,
-        eyebrow: 'PLAYLIST',
-        meta: _countMeta(lib.userName, p.tracks),
+        eyebrow: l.eyebrowPlaylist,
+        meta: _countMeta(displayUserName(l, lib.userName), p.tracks),
         tracks: p.tracks,
         description: [
-          if (DownloadManager.supported) 'Dossier sur le téléphone : ${PlaylistFolders.displayPath(p.name)}',
-          if (p.tracks.isEmpty) 'Ajoute des titres avec « … › Ajouter à une playlist ».',
+          if (DownloadManager.supported) l.playlistFolderOnPhone(PlaylistFolders.displayPath(p.name)),
+          if (p.tracks.isEmpty) l.playlistEmptyHint,
         ].join('\n'),
       );
     case CollectionKind.ytquery:
@@ -86,7 +89,7 @@ final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>(
       final isArtist = c.subtitle == 'Artiste';
       return CollectionData(
         title: c.title.isEmpty ? c.id : c.title,
-        eyebrow: isArtist ? 'ARTISTE' : 'MIX',
+        eyebrow: isArtist ? l.eyebrowArtist : l.eyebrowMix,
         meta: _countMeta('YouTube', t),
         tracks: t,
         artworkUrl: c.artworkUrl ?? t.firstOrNull?.artworkUrl,
@@ -97,7 +100,7 @@ final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>(
       final (p, t) = await ref.watch(ytPlaylistProvider(c.id).future);
       return CollectionData(
         title: p.name,
-        eyebrow: 'ALBUM',
+        eyebrow: l.eyebrowAlbum,
         meta: _countMeta(p.owner.name, t),
         tracks: t,
         artworkUrl: p.artworkUrl ?? c.artworkUrl,
@@ -107,7 +110,7 @@ final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>(
     case CollectionKind.downloads:
       final dl = ref.watch(downloadsProvider);
       final t = dl.done.map((i) => i.track).toList();
-      return CollectionData(title: 'Titres téléchargés', eyebrow: 'HORS LIGNE', meta: _countMeta('YouPlay', t), tracks: t);
+      return CollectionData(title: l.downloadedSongs, eyebrow: l.eyebrowOffline, meta: _countMeta('YouPlay', t), tracks: t);
   }
 });
 
@@ -176,7 +179,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                             isDense: true,
                             filled: true,
                             fillColor: SikaColors.surface,
-                            hintText: 'Rechercher dans ${d.title}',
+                            hintText: context.l10n.searchIn(d.title),
                             hintStyle: SikaText.ui(14, color: SikaColors.placeholder),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(SikaRadius.sm), borderSide: BorderSide.none),
                           ),
@@ -184,7 +187,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                       ),
                     ),
                   if (tracks.isEmpty)
-                    SliverToBoxAdapter(child: EmptyState(d.tracks.isEmpty ? 'Aucun titre pour l\'instant.' : 'Aucun résultat.'))
+                    SliverToBoxAdapter(child: EmptyState(d.tracks.isEmpty ? context.l10n.noSongsYet : context.l10n.noResults))
                   else
                     SliverList.builder(
                       itemCount: tracks.length,
@@ -215,7 +218,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                   padding: EdgeInsets.fromLTRB(10, top + 4, 10, 6),
                   child: Row(
                     children: [
-                      IconButtonSika(icon: 'chevron-left', label: 'Retour', color: SikaColors.onYellow, iconSize: 24, onTap: () => context.pop()),
+                      IconButtonSika(icon: 'chevron-left', label: context.l10n.back, color: SikaColors.onYellow, iconSize: 24, onTap: () => context.pop()),
                       Expanded(
                         child: Text(
                           data.value?.title ?? c.title,
@@ -258,13 +261,13 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             offset: const Offset(-10, 0),
             child: Row(
               children: [
-                IconButtonSika(icon: 'chevron-left', label: 'Retour', color: ink, iconSize: 24, onTap: () => context.pop()),
+                IconButtonSika(icon: 'chevron-left', label: context.l10n.back, color: ink, iconSize: 24, onTap: () => context.pop()),
                 const Spacer(),
                 Transform.translate(
                   offset: const Offset(20, 0),
                   child: IconButtonSika(
                     icon: 'search',
-                    label: 'Rechercher dans la playlist',
+                    label: context.l10n.searchInPlaylist,
                     color: ink,
                     onTap: () => setState(() {
                       _filtering = !_filtering;
@@ -325,7 +328,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
           if (saved != null)
             IconButtonSika(
               icon: 'add-circle',
-              label: saved ? 'Retirer de la bibliothèque' : 'Ajouter à la bibliothèque',
+              label: saved ? context.l10n.removeFromLibrary : context.l10n.addToLibrary,
               color: saved ? SikaColors.yellow : SikaColors.text,
               iconSize: 26,
               onTap: () {
@@ -334,43 +337,43 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                 } else {
                   ref.read(libraryProvider.notifier).toggleFollow(d.artist!);
                 }
-                showSnack(context, saved ? 'Retiré de ta bibliothèque' : 'Ajouté à ta bibliothèque');
+                showSnack(context, saved ? context.l10n.removedFromLibrary : context.l10n.addedToLibrary);
               },
             ),
           if (DownloadManager.supported)
             IconButtonSika(
               icon: downloaded ? 'download-circle-filled' : 'download-circle',
-              label: downloaded ? 'Supprimer le téléchargement' : 'Télécharger',
+              label: downloaded ? context.l10n.deleteDownload : context.l10n.download,
               color: downloaded ? SikaColors.yellow : SikaColors.text,
               iconSize: 24,
               onTap: () {
                 if (downloaded) {
                   ref.read(downloadsProvider.notifier).removeCollection(colKey);
-                  showSnack(context, 'Téléchargement supprimé');
+                  showSnack(context, context.l10n.downloadDeleted);
                 } else if (d.tracks.isNotEmpty) {
                   ref.read(downloadsProvider.notifier).downloadCollection(
                         CollectionRef(c.kind, c.id, title: d.title, subtitle: _typeLabel(d), artworkUrl: d.artworkUrl),
                         d.tracks,
                       );
-                  showSnack(context, 'Téléchargement de ${d.tracks.length} titres lancé');
+                  showSnack(context, context.l10n.downloadingSongs(d.tracks.length));
                 }
               },
             ),
           if (d.shareUrl != null)
             IconButtonSika(
               icon: 'share',
-              label: 'Partager',
+              label: context.l10n.share,
               onTap: () => SharePlus.instance.share(ShareParams(text: '${d.title}\n${d.shareUrl}')),
             ),
           if (c.kind == CollectionKind.mine)
             IconButtonSika(
               icon: 'more',
-              label: 'Options de la playlist',
+              label: context.l10n.playlistOptions,
               onTap: () => showSikaSheet(context, (ctx) => SafeArea(
                     child: Column(mainAxisSize: MainAxisSize.min, children: [
                       SheetAction(
                         icon: 'list',
-                        label: 'Renommer',
+                        label: context.l10n.rename,
                         onTap: () {
                           Navigator.of(ctx).pop();
                           renamePlaylistDialog(context, ref, c.id);
@@ -378,7 +381,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                       ),
                       SheetAction(
                         icon: 'close',
-                        label: 'Supprimer la playlist',
+                        label: context.l10n.deletePlaylist,
                         color: SikaColors.orange,
                         onTap: () async {
                           Navigator.of(ctx).pop();
@@ -392,7 +395,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
           const Spacer(),
           IconButtonSika(
             icon: 'shuffle',
-            label: shuffle ? 'Désactiver l\'aléatoire' : 'Activer l\'aléatoire',
+            label: shuffle ? context.l10n.shuffleOff : context.l10n.shuffleOn,
             color: shuffle ? SikaColors.yellow : SikaColors.text,
             iconSize: 24,
             onTap: () => ref.read(playerProvider.notifier).toggleShuffle(),
@@ -405,10 +408,10 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
   }
 
   String _typeLabel(CollectionData d) => switch (c.kind) {
-        CollectionKind.ytalbum => 'Album',
-        CollectionKind.ytquery => c.subtitle == 'Artiste' ? 'Artiste' : 'Mix',
-        CollectionKind.playlist || CollectionKind.artist || CollectionKind.genre || CollectionKind.query || CollectionKind.trending => 'Mix',
-        _ => 'Playlist',
+        CollectionKind.ytalbum => context.l10n.kindAlbum,
+        CollectionKind.ytquery => c.subtitle == 'Artiste' ? context.l10n.kindArtist : context.l10n.kindMix,
+        CollectionKind.playlist || CollectionKind.artist || CollectionKind.genre || CollectionKind.query || CollectionKind.trending => context.l10n.kindMix,
+        _ => context.l10n.kindPlaylist,
       };
 }
 

@@ -1,0 +1,6 @@
+# Traductions de l'app. Pour ajouter une langue : copier lib/l10n/app_en.arb en app_<code>.arb et traduire.
+arb-dir: lib/l10n
+template-arb-file: app_en.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

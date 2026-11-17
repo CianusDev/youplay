@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../../theme/sika_tokens.dart';
 import 'cover_art.dart';
 import 'sika_icon.dart';
+import '../../l10n/l10n.dart';
 
 /// Égaliseur animé : 4 barres yellow (titre en cours).
 class Equalizer extends StatefulWidget {
@@ -148,7 +149,7 @@ class TrackRow extends StatelessWidget {
             const SizedBox(width: 8),
             Text(duration, style: SikaText.ui(12, w: FontWeight.w600, color: SikaColors.textMuted)),
             if (onMore != null)
-              IconButtonSika(icon: 'more', label: 'Options du titre', iconSize: 18, color: SikaColors.textMuted, onTap: onMore)
+              IconButtonSika(icon: 'more', label: context.l10n.trackOptions, iconSize: 18, color: SikaColors.textMuted, onTap: onMore)
             else
               const SizedBox(width: 12),
           ],
@@ -271,12 +272,15 @@ class DownloadRow extends StatelessWidget {
     this.variant,
     this.onTap,
     this.onLongPress,
+    this.waitingForWifi = false,
   });
 
   final String title;
   final String meta;
   final String seed;
   final DownloadRowStatus status;
+  /// En attente : précise « En attente du Wi-Fi » quand c'est le réseau qui bloque.
+  final bool waitingForWifi;
   final double progress;
   final String? imageUrl;
   final bool podcast;
@@ -289,9 +293,9 @@ class DownloadRow extends StatelessWidget {
     final trailing = switch (status) {
       DownloadRowStatus.done => const SikaIcon('download-circle-filled', size: 24, color: SikaColors.yellow),
       DownloadRowStatus.downloading =>
-        Text('${(progress * 100).round()} %', style: SikaText.ui(12, w: FontWeight.w800, color: SikaColors.yellow)),
-      DownloadRowStatus.queued => Text('En attente', style: SikaText.ui(11, w: FontWeight.w700, color: SikaColors.textMuted)),
-      DownloadRowStatus.failed => Text('Échec · réessayer', style: SikaText.ui(11, w: FontWeight.w700, color: SikaColors.orange)),
+        Text(context.l10n.percent((progress * 100).round()), style: SikaText.ui(12, w: FontWeight.w800, color: SikaColors.yellow)),
+      DownloadRowStatus.queued => Text(waitingForWifi ? context.l10n.waitingForWifi : context.l10n.queued, style: SikaText.ui(11, w: FontWeight.w700, color: SikaColors.textMuted)),
+      DownloadRowStatus.failed => Text(context.l10n.failedRetry, style: SikaText.ui(11, w: FontWeight.w700, color: SikaColors.orange)),
     };
     return InkWell(
       onTap: onTap,

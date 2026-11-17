@@ -3,11 +3,13 @@ import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'l10n/l10n.dart';
 import 'router.dart';
 import 'state/playlist_folders.dart';
 import 'state/providers.dart';
@@ -17,10 +19,14 @@ import 'ui/components/update_dialog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  // Langue de l'interface dès le démarrage (nom du canal de notification compris).
+  final savedLocale = prefs.getString('youplay.locale');
+  L10n.update(resolveAppLocale(savedLocale == null ? null : Locale(savedLocale)));
   // Lecture en arrière-plan + contrôles écran de verrouillage / notification.
   await JustAudioBackground.init(
     androidNotificationChannelId: 'app.sika.audio',
-    androidNotificationChannelName: 'Lecture YouPlay',
+    androidNotificationChannelName: L10n.current.notificationChannelName,
     // Le service reste au premier plan même en pause : sinon Android 12+ refuse de le relancer
     // quand la lecture reprend en arrière-plan (fin d'appel, fin de vidéo…), la musique tourne
     // sans protection et MIUI tue l'app au premier manque de mémoire.
@@ -28,7 +34,6 @@ Future<void> main() async {
     // Icône monochrome dédiée : l'icône d'app adaptative ferait masquer la notification.
     androidNotificationIcon: 'drawable/ic_stat_youplay',
   );
-  final prefs = await SharedPreferences.getInstance();
   // Android 13+ : sans cette permission, la notification de lecture (contrôles en arrière-plan) est masquée.
   if (!kIsWeb && Platform.isAndroid) {
     Permission.notification.status.then((s) {
@@ -60,12 +65,26 @@ class SikaApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     // Démarre la synchronisation playlists ↔ dossiers Music/YouPlay/<playlist>.
     ref.watch(playlistFoldersProvider);
+    final chosen = ref.watch(appLocaleProvider);
     return MaterialApp.router(
       title: 'YouPlay',
       debugShowCheckedModeBanner: false,
       theme: sikaTheme(),
       routerConfig: router,
-      builder: (context, child) => SplashOverlay(child: child ?? const SizedBox.shrink()),
+      // Langue : choix des réglages, sinon celle du téléphone (français), sinon anglais.
+      locale: chosen,
+      supportedLocales: supportedAppLocales,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      localeListResolutionCallback: (device, _) => resolveAppLocale(chosen, device),
+      builder: (context, child) {
+        L10n.update(Localizations.localeOf(context));
+        return SplashOverlay(child: child ?? const SizedBox.shrink());
+      },
     );
   }
 }

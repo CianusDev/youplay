@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
@@ -34,7 +35,7 @@ class _Item {
   final bool circle;
 }
 
-const _chips = ['Tout', 'Playlists', 'Artistes', 'Albums', 'Podcasts', 'Téléchargés'];
+List<String> _chips(AppLocalizations l) => [l.chipAll, l.chipPlaylists, l.chipArtists, l.chipAlbums, l.chipPodcasts, l.navDownloads];
 
 class LibraryScreen extends ConsumerStatefulWidget {
   const LibraryScreen({super.key});
@@ -50,12 +51,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   String _filter = '';
 
   List<_Item> _items(LibraryState lib, DownloadsState dl) {
+    final l = context.l10n;
     final items = <_Item>[
       _Item(
-        ref: const CollectionRef(CollectionKind.likes, 'me', title: 'Titres likés'),
-        title: 'Titres likés',
-        meta: 'Playlist · ${lib.likedTracks.length} titres',
-        typeLabel: 'Playlist',
+        ref: CollectionRef(CollectionKind.likes, 'me', title: l.likedSongs),
+        title: l.likedSongs,
+        meta: '${l.kindPlaylist} · ${l.songCount(lib.likedTracks.length)}',
+        typeLabel: l.kindPlaylist,
         type: _Type.playlist,
         variant: 1,
       ),
@@ -63,8 +65,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         _Item(
           ref: CollectionRef(CollectionKind.mine, p.id, title: p.name),
           title: p.name,
-          meta: 'Playlist · ${lib.userName} · ${p.tracks.length} titres',
-          typeLabel: 'Playlist',
+          meta: '${l.kindPlaylist} · ${displayUserName(l, lib.userName)} · ${l.songCount(p.tracks.length)}',
+          typeLabel: l.kindPlaylist,
           type: _Type.playlist,
           imageUrl: p.tracks.firstOrNull?.artworkUrl,
         ),
@@ -72,8 +74,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         _Item(
           ref: playlistRef(p),
           title: p.name,
-          meta: '${p.isAlbum ? 'Album' : 'Playlist'} · ${p.owner.name}',
-          typeLabel: p.isAlbum ? 'Album' : 'Playlist',
+          meta: '${p.isAlbum ? l.kindAlbum : l.kindPlaylist} · ${p.owner.name}',
+          typeLabel: p.isAlbum ? l.kindAlbum : l.kindPlaylist,
           type: p.isAlbum ? _Type.album : _Type.playlist,
           imageUrl: p.artworkUrl,
         ),
@@ -81,8 +83,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         _Item(
           ref: artistRef(a),
           title: a.name,
-          meta: 'Artiste',
-          typeLabel: 'Artiste',
+          meta: l.kindArtist,
+          typeLabel: l.kindArtist,
           type: _Type.artist,
           imageUrl: a.imageUrl,
           circle: true,
@@ -94,8 +96,8 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       items.add(_Item(
         ref: c.ref,
         title: c.ref.title,
-        meta: '${c.ref.subtitle.isEmpty ? 'Mix' : c.ref.subtitle} · ${c.trackIds.length} titres',
-        typeLabel: c.ref.subtitle.isEmpty ? 'Mix' : c.ref.subtitle,
+        meta: '${c.ref.subtitle.isEmpty ? l.kindMix : collectionKindLabel(l, c.ref.subtitle)} · ${l.songCount(c.trackIds.length)}',
+        typeLabel: c.ref.subtitle.isEmpty ? l.kindMix : collectionKindLabel(l, c.ref.subtitle),
         type: c.ref.subtitle == 'Podcast' ? _Type.podcast : _Type.playlist,
         imageUrl: c.ref.artworkUrl,
       ));
@@ -140,17 +142,17 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     child: Text(lib.userName.characters.first.toUpperCase(), style: SikaText.display(14, color: SikaColors.onYellow)),
                   ),
                   const SizedBox(width: 12),
-                  Expanded(child: Text('Bibliothèque', style: SikaText.display(26, ls: -0.8))),
+                  Expanded(child: Text(context.l10n.libraryTitle, style: SikaText.display(26, ls: -0.8))),
                   IconButtonSika(
                     icon: 'search',
-                    label: 'Rechercher dans la bibliothèque',
+                    label: context.l10n.searchInLibrary,
                     color: _filtering ? SikaColors.yellow : SikaColors.text,
                     onTap: () => setState(() {
                       _filtering = !_filtering;
                       if (!_filtering) _filter = '';
                     }),
                   ),
-                  IconButtonSika(icon: 'plus', label: 'Créer une playlist', onTap: _create),
+                  IconButtonSika(icon: 'plus', label: context.l10n.createPlaylist, onTap: _create),
                 ],
               ),
             ),
@@ -168,7 +170,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                     isDense: true,
                     filled: true,
                     fillColor: SikaColors.surface,
-                    hintText: 'Rechercher dans ta bibliothèque',
+                    hintText: context.l10n.searchYourLibrary,
                     hintStyle: SikaText.ui(14, color: SikaColors.placeholder),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(SikaRadius.sm), borderSide: BorderSide.none),
                   ),
@@ -178,7 +180,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(top: 16),
-              child: ChipRow(labels: _chips, selected: _chip, onSelect: (i) => setState(() => _chip = i)),
+              child: ChipRow(labels: _chips(context.l10n), selected: _chip, onSelect: (i) => setState(() => _chip = i)),
             ),
           ),
           SliverToBoxAdapter(child: _MonthCard(onTap: () => _showStats(context, lib))),
@@ -190,12 +192,12 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   TextButton.icon(
                     onPressed: () => setState(() => _alpha = !_alpha),
                     icon: const SikaIcon('sort', size: 16),
-                    label: Text(_alpha ? 'Alphabétique' : 'Récents', style: SikaText.ui(13, w: FontWeight.w700)),
+                    label: Text(_alpha ? context.l10n.sortAlphabetical : context.l10n.sortRecent, style: SikaText.ui(13, w: FontWeight.w700)),
                   ),
                   const Spacer(),
                   IconButtonSika(
                     icon: _grid ? 'list' : 'grid',
-                    label: _grid ? 'Afficher en liste' : 'Afficher en grille',
+                    label: _grid ? context.l10n.showAsList : context.l10n.showAsGrid,
                     onTap: () => setState(() => _grid = !_grid),
                   ),
                 ],
@@ -205,11 +207,11 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           if (items.isEmpty)
             SliverToBoxAdapter(
               child: EmptyState(switch (_chip) {
-                2 => 'Suis des artistes pour les retrouver ici.',
-                3 => 'Aucun album enregistré.',
-                4 => 'Aucun podcast enregistré.',
-                5 => 'Rien de téléchargé pour l\'instant.',
-                _ => 'Rien ici pour l\'instant.',
+                2 => context.l10n.emptyArtists,
+                3 => context.l10n.emptyAlbums,
+                4 => context.l10n.emptyPodcasts,
+                5 => context.l10n.emptyDownloadsYet,
+                _ => context.l10n.emptyHere,
               }),
             )
           else if (_grid)
@@ -267,7 +269,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   }
 
   Future<void> _create() async {
-    final name = await askText(context, 'Nouvelle playlist', 'Nom de la playlist');
+    final name = await askText(context, context.l10n.newPlaylist, context.l10n.playlistName);
     if (name == null || !mounted) return;
     final p = ref.read(libraryProvider.notifier).createPlaylist(name);
     openCollection(context, CollectionRef(CollectionKind.mine, p.id, title: p.name));
@@ -280,7 +282,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           child: Column(mainAxisSize: MainAxisSize.min, children: [
             SheetAction(
               icon: 'pin',
-              label: pinned ? 'Désépingler' : 'Épingler',
+              label: pinned ? context.l10n.unpin : context.l10n.pin,
               onTap: () {
                 ref.read(libraryProvider.notifier).togglePin(i.ref.key);
                 Navigator.of(ctx).pop();
@@ -290,7 +292,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               if (lib.savedPlaylists.any((p) => playlistRef(p).key == i.ref.key))
               SheetAction(
                 icon: 'close',
-                label: 'Retirer de la bibliothèque',
+                label: context.l10n.removeFromLibrary,
                 onTap: () {
                   ref.read(libraryProvider.notifier).toggleSavePlaylist(lib.savedPlaylists.firstWhere((p) => playlistRef(p).key == i.ref.key));
                   Navigator.of(ctx).pop();
@@ -299,7 +301,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             if (i.type == _Type.artist)
               SheetAction(
                 icon: 'close',
-                label: 'Ne plus suivre',
+                label: context.l10n.unfollow,
                 onTap: () {
                   ref.read(libraryProvider.notifier).toggleFollow(lib.followedArtists.firstWhere((a) => artistRef(a).key == i.ref.key));
                   Navigator.of(ctx).pop();
@@ -308,7 +310,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             if (i.ref.kind == CollectionKind.mine)
               SheetAction(
                 icon: 'list',
-                label: 'Renommer',
+                label: context.l10n.rename,
                 onTap: () {
                   Navigator.of(ctx).pop();
                   renamePlaylistDialog(context, ref, i.ref.id);
@@ -317,7 +319,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             if (i.ref.kind == CollectionKind.mine)
               SheetAction(
                 icon: 'close',
-                label: 'Supprimer la playlist',
+                label: context.l10n.deletePlaylist,
                 color: SikaColors.orange,
                 onTap: () {
                   Navigator.of(ctx).pop();
@@ -348,19 +350,19 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Ton mois en musique', style: SikaText.display(24, ls: -0.6)),
+                Text(context.l10n.yourMonthInMusic, style: SikaText.display(24, ls: -0.6)),
                 const SizedBox(height: 16),
                 Row(children: [
-                  _Stat(value: '$minutes', label: 'minutes'),
+                  _Stat(value: '$minutes', label: context.l10n.statMinutes),
                   const SizedBox(width: 10),
-                  _Stat(value: '${month.length}', label: 'écoutes'),
+                  _Stat(value: '${month.length}', label: context.l10n.statPlays),
                   const SizedBox(width: 10),
-                  _Stat(value: '${byArtist.length}', label: 'artistes'),
+                  _Stat(value: '${byArtist.length}', label: context.l10n.statArtists),
                 ]),
-                if (month.isEmpty) const EmptyState('Écoute de la musique pour voir tes stats ici.'),
+                if (month.isEmpty) EmptyState(context.l10n.statsEmpty),
                 if (topArtists.isNotEmpty) ...[
                   const SizedBox(height: 20),
-                  Text('Artistes les plus écoutés', style: SikaText.h2Small),
+                  Text(context.l10n.topArtists, style: SikaText.h2Small),
                   const SizedBox(height: 8),
                   for (final (i, a) in topArtists.take(5).indexed)
                     Padding(
@@ -370,13 +372,13 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                         CoverArt.seeded(a.$1.id, size: 40, circle: true, imageUrl: a.$1.imageUrl),
                         const SizedBox(width: 12),
                         Expanded(child: Text(a.$1.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: SikaText.cardTitle)),
-                        Text('${a.$2} écoutes', style: SikaText.meta),
+                        Text(context.l10n.playsCount(a.$2), style: SikaText.meta),
                       ]),
                     ),
                 ],
                 if (genres.isNotEmpty) ...[
                   const SizedBox(height: 16),
-                  Text('Genres', style: SikaText.h2Small),
+                  Text(context.l10n.genres, style: SikaText.h2Small),
                   const SizedBox(height: 8),
                   Wrap(spacing: 8, runSpacing: 8, children: [for (final g in genres) SikaChip(label: g)]),
                 ],
@@ -437,9 +439,9 @@ class _MonthCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Ton mois en musique', style: SikaText.rowTitle),
+                      Text(context.l10n.yourMonthInMusic, style: SikaText.rowTitle),
                       const SizedBox(height: 2),
-                      Text('Artistes, genres et minutes d\'écoute', style: SikaText.meta),
+                      Text(context.l10n.monthStatsSub, style: SikaText.meta),
                     ],
                   ),
                 ),

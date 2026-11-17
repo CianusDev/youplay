@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:just_audio/just_audio.dart';
 
 import 'models.dart';
+import '../l10n/l10n.dart';
 
 /// Préfixes d'identifiants des contenus YouTube.
 const ytTrackPrefix = 'yt_';
@@ -56,7 +57,7 @@ class YoutubeSource {
   Future<List<Artist>> searchArtists(String query) async {
     final raw = await _ch.invokeListMethod<Map>('searchArtists', {'query': query}) ?? const [];
     return raw.map((m) => m.cast<String, dynamic>()).map((m) {
-      final name = m['name'] as String? ?? 'Artiste';
+      final name = m['name'] as String? ?? L10n.current.kindArtist;
       return Artist(
         id: '$ytArtistPrefix${name.toLowerCase()}',
         name: name,
@@ -84,7 +85,7 @@ class YoutubeSource {
     final items = (m['items'] as List).cast<Map>().map((e) => e.cast<String, dynamic>()).where((e) => e['type'] == 'stream').map(_track).toList();
     final p = Playlist(
       id: url,
-      name: m['name'] as String? ?? 'Album',
+      name: m['name'] as String? ?? L10n.current.kindAlbum,
       owner: _artist(m['uploader'] as String?),
       artworkUrl: m['thumbnail'] as String?,
       trackCount: items.length,
@@ -114,7 +115,7 @@ class YoutubeSource {
 
   static Track _track(Map<String, dynamic> m) => Track(
         id: '$ytTrackPrefix${m['id']}',
-        title: m['title'] as String? ?? 'Sans titre',
+        title: m['title'] as String? ?? L10n.current.untitled,
         artist: _artist(m['artist'] as String?),
         duration: Duration(seconds: (m['duration'] as num?)?.toInt() ?? 0),
         artworkUrl: m['thumbnail'] as String?,
@@ -123,7 +124,7 @@ class YoutubeSource {
 
   static Playlist _playlist(Map<String, dynamic> m) => Playlist(
         id: m['url'] as String,
-        name: m['title'] as String? ?? 'Album',
+        name: m['title'] as String? ?? L10n.current.kindAlbum,
         owner: _artist(m['artist'] as String?),
         artworkUrl: m['thumbnail'] as String?,
         trackCount: (m['count'] as num?)?.toInt() ?? 0,

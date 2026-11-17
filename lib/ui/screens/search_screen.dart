@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models.dart';
+import '../../l10n/l10n.dart';
 import '../../data/youtube_source.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
@@ -27,16 +28,17 @@ class _Genre {
 
 CollectionRef _q(String query, String title) => CollectionRef(CollectionKind.ytquery, query, title: title, subtitle: 'Mix');
 
-final _genres = [
+// Libellés traduits ; les requêtes YouTube restent en français (le catalogue visé).
+List<_Genre> _genres(AppLocalizations l) => [
   _Genre('Afrobeat', SikaColors.yellow, SikaColors.onYellow, SikaColors.onYellow, _q('afrobeat', 'Afrobeat')),
   _Genre('Amapiano', SikaColors.orange, SikaColors.onYellow, SikaColors.yellow, _q('amapiano', 'Amapiano')),
   _Genre('Highlife', SikaColors.forest, SikaColors.text, SikaColors.yellow, _q('highlife', 'Highlife')),
   _Genre('Gospel', SikaColors.plum, SikaColors.text, SikaColors.orange, _q('gospel', 'Gospel')),
-  _Genre('Podcasts', SikaColors.cream, SikaColors.onYellow, SikaColors.forest, _q('podcast musique', 'Podcasts')),
-  _Genre('Concentration', SikaColors.surface3, SikaColors.yellow, SikaColors.cream, _q('lofi focus', 'Concentration')),
-  _Genre('Rap FR', SikaColors.wine, SikaColors.text, SikaColors.onYellow, _q('rap français', 'Rap FR')),
-  _Genre('Traditionnel', SikaColors.yellowSoft, SikaColors.onYellow, SikaColors.wine, _q('musique traditionnelle africaine', 'Traditionnel')),
-  _Genre('Électro', SikaColors.onYellow, SikaColors.yellow, SikaColors.orange, _q('électro', 'Électro')),
+  _Genre(l.genrePodcasts, SikaColors.cream, SikaColors.onYellow, SikaColors.forest, _q('podcast musique', l.genrePodcasts)),
+  _Genre(l.genreFocus, SikaColors.surface3, SikaColors.yellow, SikaColors.cream, _q('lofi focus', l.genreFocus)),
+  _Genre(l.chipFrenchRap, SikaColors.wine, SikaColors.text, SikaColors.onYellow, _q('rap français', l.chipFrenchRap)),
+  _Genre(l.genreTraditional, SikaColors.yellowSoft, SikaColors.onYellow, SikaColors.wine, _q('musique traditionnelle africaine', l.genreTraditional)),
+  _Genre(l.genreElectro, SikaColors.onYellow, SikaColors.yellow, SikaColors.orange, _q('électro', l.genreElectro)),
   _Genre('Hip-Hop', SikaColors.orange, SikaColors.onYellow, SikaColors.plum, _q('hip hop', 'Hip-Hop')),
 ];
 
@@ -116,7 +118,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           children: [
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Text('Recherche', style: SikaText.display(32, ls: -1)),
+              child: Text(context.l10n.searchTitle, style: SikaText.display(32, ls: -1)),
             ),
             // Champ (clair)
             Padding(
@@ -141,24 +143,24 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                         decoration: InputDecoration(
                           border: InputBorder.none,
                           isCollapsed: true,
-                          hintText: 'Artistes, titres, playlists…',
+                          hintText: context.l10n.searchHint,
                           hintStyle: SikaText.ui(15, w: FontWeight.w600, color: SikaColors.placeholder),
                         ),
                       ),
                     ),
                     if (_ctrl.text.isNotEmpty)
-                      IconButtonSika(icon: 'close', label: 'Effacer', size: 36, iconSize: 18, color: SikaColors.onYellow, onTap: _clear)
+                      IconButtonSika(icon: 'close', label: context.l10n.clear, size: 36, iconSize: 18, color: SikaColors.onYellow, onTap: _clear)
                     else
                       IconButtonSika(
                         icon: 'mic',
-                        label: 'Recherche vocale',
+                        label: context.l10n.voiceSearch,
                         size: 36,
                         iconSize: 18,
                         color: SikaColors.onYellow,
                         background: SikaColors.yellow,
                         onTap: () {
                           _focus.requestFocus();
-                          showSnack(context, 'Utilise le micro de ton clavier pour dicter');
+                          showSnack(context, context.l10n.voiceSearchHint);
                         },
                       ),
                   ],
@@ -175,7 +177,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                 const _TrendingCard(),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
-                  child: Text('Parcourir tout', style: SikaText.h2Small),
+                  child: Text(context.l10n.browseAll, style: SikaText.h2Small),
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -187,7 +189,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                     mainAxisSpacing: 10,
                     crossAxisSpacing: 10,
                     childAspectRatio: ((MediaQuery.sizeOf(context).width - 50) / 2) / 104,
-                    children: [for (final g in _genres) _GenreTile(g)],
+                    children: [for (final g in _genres(context.l10n)) _GenreTile(g)],
                   ),
                 ),
               ],
@@ -212,7 +214,7 @@ class _RecentSearches extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
-          child: Text('Recherches récentes', style: SikaText.h2Small),
+          child: Text(context.l10n.recentSearches, style: SikaText.h2Small),
         ),
         SizedBox(
           height: 36,
@@ -242,7 +244,7 @@ class _TrendingCard extends StatelessWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
-          child: Text('Tendances de la semaine', style: SikaText.h2Small),
+          child: Text(context.l10n.trendingThisWeek, style: SikaText.h2Small),
         ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -268,9 +270,9 @@ class _TrendingCard extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Top 50 — France', style: SikaText.rowTitle),
+                          Text(context.l10n.top50France, style: SikaText.rowTitle),
                           const SizedBox(height: 4),
-                          Text('Mis à jour en continu', style: SikaText.meta),
+                          Text(context.l10n.updatedContinuously, style: SikaText.meta),
                         ],
                       ),
                     ),
@@ -336,7 +338,7 @@ class _Results extends StatelessWidget {
   @override
   Widget build(BuildContext context) => YoutubeSource.supported
       ? _YtResults(query: query, onCommit: onCommit, onSearch: onSearch)
-      : const EmptyState('La recherche YouTube fonctionne dans l\'app Android.');
+      : EmptyState(context.l10n.searchAndroidOnly);
 }
 
 String _norm(String s) => s
@@ -413,7 +415,7 @@ class _YtResults extends ConsumerWidget {
       onRetry: () => ref.invalidate(ytSearchProvider(query)),
       data: (res) {
         final t = res.songs;
-        if (t.isEmpty && artists.isEmpty) return EmptyState('Aucun résultat pour « $query ».');
+        if (t.isEmpty && artists.isEmpty) return EmptyState(context.l10n.noResultsFor(query));
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -423,18 +425,18 @@ class _YtResults extends ConsumerWidget {
                 child: GestureDetector(
                   onTap: res.corrected ? null : () => onSearch(res.suggestion!),
                   child: Text.rich(TextSpan(children: [
-                    TextSpan(text: res.corrected ? 'Résultats pour ' : 'Vouliez-vous dire ', style: SikaText.meta),
+                    TextSpan(text: res.corrected ? context.l10n.resultsFor : context.l10n.didYouMean, style: SikaText.meta),
                     TextSpan(text: res.suggestion, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
                     if (!res.corrected) TextSpan(text: ' ?', style: SikaText.meta),
                   ])),
                 ),
               ),
             // Meilleur résultat
-            const SectionLabel('Meilleur résultat'),
+            SectionLabel(context.l10n.topResult),
             if (topArtist != null)
               _BestCard(
                 title: topArtist.name,
-                subtitle: topArtist.followers > 0 ? 'Artiste · ${formatCount(topArtist.followers)} abonnés' : 'Artiste',
+                subtitle: topArtist.followers > 0 ? context.l10n.artistFollowers(formatCount(topArtist.followers)) : context.l10n.kindArtist,
                 imageUrl: topArtist.imageUrl,
                 seed: topArtist.id,
                 circle: true,
@@ -443,7 +445,7 @@ class _YtResults extends ConsumerWidget {
             else if (t.isNotEmpty)
               _BestCard(
                 title: t.first.title,
-                subtitle: 'Titre · ${t.first.artist.name}',
+                subtitle: context.l10n.songBy(t.first.artist.name),
                 imageUrl: t.first.artworkUrl,
                 seed: t.first.id,
                 onTap: () {
@@ -452,7 +454,7 @@ class _YtResults extends ConsumerWidget {
                 },
               ),
             if (t.isNotEmpty) ...[
-              const SectionLabel('Titres'),
+              SectionLabel(context.l10n.songs),
               for (final (i, x) in t.take(10).indexed)
                 TrackRow(
                   index: i + 1,
@@ -471,7 +473,7 @@ class _YtResults extends ConsumerWidget {
                 ),
             ],
             if (artists.isNotEmpty) ...[
-              const SectionLabel('Artistes'),
+              SectionLabel(context.l10n.artists),
               SizedBox(
                 height: 124,
                 child: ListView.separated(
@@ -496,11 +498,11 @@ class _YtResults extends ConsumerWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const SectionLabel('Albums et playlists'),
+                        SectionLabel(context.l10n.albumsAndPlaylists),
                         for (final x in p.take(6))
                           LibraryRow(
                             title: x.name,
-                            meta: '${x.isAlbum ? 'Album' : 'Playlist'} · ${x.owner.name}',
+                            meta: '${x.isAlbum ? context.l10n.kindAlbum : context.l10n.kindPlaylist} · ${x.owner.name}',
                             seed: x.id,
                             imageUrl: x.artworkUrl,
                             size: 52,
