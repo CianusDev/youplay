@@ -252,26 +252,32 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       const SizedBox(width: 8),
                       Text('Cet appareil', style: SikaText.ui(12, w: FontWeight.w700, color: SikaColors.yellow)),
                       const Spacer(),
-                      IconButtonSika(
-                        icon: 'timer',
-                        label: sleep.active ? 'Minuteur de sommeil : activé' : 'Minuteur de sommeil',
-                        color: sleep.active ? SikaColors.yellow : SikaColors.text,
-                        badge: sleep.active,
-                        onTap: () => _showSleepTimer(context),
-                      ),
-                      IconButtonSika(
-                        icon: 'add-circle',
-                        label: 'Ajouter à une playlist',
-                        onTap: () => showAddToPlaylist(context, ref, t),
-                      ),
-                      IconButtonSika(
-                        icon: 'share',
-                        label: 'Partager',
-                        onTap: () => SharePlus.instance.share(ShareParams(text: '${t.title} — ${t.artist.name}\n${t.shareUrl}')),
-                      ),
+                      // Groupe décalé d'un bloc : écarts égaux, dernière icône alignée sur « Répéter ».
                       Transform.translate(
-                        offset: const Offset(24, 0),
-                        child: IconButtonSika(icon: 'queue', label: 'File d\'attente', onTap: () => _showQueue(context)),
+                        offset: const Offset(10, 0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButtonSika(
+                              icon: 'timer',
+                              label: sleep.active ? 'Minuteur de sommeil : activé' : 'Minuteur de sommeil',
+                              color: sleep.active ? SikaColors.yellow : SikaColors.text,
+                              badge: sleep.active,
+                              onTap: () => _showSleepTimer(context),
+                            ),
+                            IconButtonSika(
+                              icon: 'add-circle',
+                              label: 'Ajouter à une playlist',
+                              onTap: () => showAddToPlaylist(context, ref, t),
+                            ),
+                            IconButtonSika(
+                              icon: 'share',
+                              label: 'Partager',
+                              onTap: () => SharePlus.instance.share(ShareParams(text: '${t.title} — ${t.artist.name}\n${t.shareUrl}')),
+                            ),
+                            IconButtonSika(icon: 'queue', label: 'File d\'attente', onTap: () => _showQueue(context)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
