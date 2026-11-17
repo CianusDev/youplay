@@ -13,6 +13,7 @@ import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../state/player_controller.dart';
 import '../../state/providers.dart';
+import '../../state/sleep_timer.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
 import '../components/cover_art.dart';
@@ -71,6 +72,9 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
     final pos = ref.watch(positionProvider).value ?? Duration.zero;
     final dur = ref.watch(durationProvider).value ?? t.duration;
     final top = MediaQuery.paddingOf(context).top;
+    final sleep = ref.watch(sleepTimerProvider);
+    // Précédent : revient au début après 3 s, sinon titre d'avant ; grisé s'il n'y a ni l'un ni l'autre.
+    final canPrev = pos > const Duration(seconds: 3) || ref.watch(audioPlayerProvider).hasPrevious;
 
     return Scaffold(
       body: Transform.translate(
@@ -145,8 +149,8 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                     ),
                   ),
                 ),
-                // 3. Titre + like
-                const SizedBox(height: 30),
+                // 3. Ligne de paroles en cours, puis titre + like
+                _NowLyricLine(track: t, position: pos),
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -195,7 +199,14 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       color: ui.shuffle ? SikaColors.yellow : SikaColors.text,
                       onTap: ctrl.toggleShuffle,
                     ),
-                    IconButtonSika(icon: 'skip-prev', label: 'Précédent', size: 56, iconSize: 30, onTap: ctrl.previous),
+                    IconButtonSika(
+                      icon: 'skip-prev',
+                      label: 'Précédent',
+                      size: 56,
+                      iconSize: 30,
+                      color: canPrev ? SikaColors.text : SikaColors.text.withValues(alpha: 0.3),
+                      onTap: canPrev ? ctrl.previous : null,
+                    ),
                     PlayButton(
                       playing: ui.playing,
                       loading: ui.buffering && !ui.playing,
@@ -242,6 +253,18 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
                       Text('Cet appareil', style: SikaText.ui(12, w: FontWeight.w700, color: SikaColors.yellow)),
                       const Spacer(),
                       IconButtonSika(
+                        icon: 'timer',
+                        label: sleep.active ? 'Minuteur de sommeil : activé' : 'Minuteur de sommeil',
+                        color: sleep.active ? SikaColors.yellow : SikaColors.text,
+                        badge: sleep.active,
+                        onTap: () => _showSleepTimer(context),
+                      ),
+                      IconButtonSika(
+                        icon: 'add-circle',
+                        label: 'Ajouter à une playlist',
+                        onTap: () => showAddToPlaylist(context, ref, t),
+                      ),
+                      IconButtonSika(
                         icon: 'share',
                         label: 'Partager',
                         onTap: () => SharePlus.instance.share(ShareParams(text: '${t.title} — ${t.artist.name}\n${t.shareUrl}')),
@@ -265,6 +288,62 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
         ),
       ),
     );
+  }
+
+  void _showSleepTimer(BuildContext context) {
+    String hhmm(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
+    showSikaSheet(context, (ctx) {
+      final sleep = ref.read(sleepTimerProvider);
+      final timer = ref.read(sleepTimerProvider.notifier);
+      void pick(VoidCallback start, String msg) {
+        start();
+        Navigator.of(ctx).pop();
+        showSnack(context, msg);
+      }
+
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 4),
+              child: Text('Minuteur de sommeil', style: SikaText.h2Small),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(
+                sleep.endsAt != null
+                    ? 'Arrêt de la lecture à ${hhmm(sleep.endsAt!)}'
+                    : sleep.endOfTrack
+                        ? 'Arrêt à la fin du titre en cours'
+                        : 'La lecture se met en pause au bout du délai choisi.',
+                style: SikaText.meta,
+              ),
+            ),
+            for (final m in const [5, 15, 30, 45, 60])
+              SheetAction(
+                icon: 'clock',
+                label: m == 60 ? '1 heure' : '$m minutes',
+                onTap: () => pick(() => timer.start(Duration(minutes: m)), 'Arrêt dans ${m == 60 ? '1 heure' : '$m minutes'}'),
+              ),
+            SheetAction(
+              icon: 'skip-next',
+              label: 'Fin du titre',
+              onTap: () => pick(timer.startEndOfTrack, 'Arrêt à la fin du titre'),
+            ),
+            if (sleep.active)
+              SheetAction(
+                icon: 'close',
+                label: 'Désactiver le minuteur',
+                color: SikaColors.yellow,
+                onTap: () => pick(timer.cancel, 'Minuteur désactivé'),
+              ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      );
+    });
   }
 
   void _showQueue(BuildContext context) {
@@ -302,6 +381,53 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
             );
           }),
         ));
+  }
+}
+
+/// Ligne de paroles en cours, au-dessus du titre (paroles synchronisées uniquement).
+/// L'espace reste réservé pendant les intros et silences : le titre ne saute pas.
+class _NowLyricLine extends ConsumerWidget {
+  const _NowLyricLine({required this.track, required this.position});
+  final Track track;
+  final Duration position;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = ref.watch(lyricsProvider(LyricsKey(track.id, track.artist.name, track.title, track.duration))).value;
+    final synced = l != null && l.synced && l.lines.isNotEmpty;
+    String text = '';
+    if (synced) {
+      final at = position - ref.watch(lyricsOffsetProvider(track.id)) + const Duration(milliseconds: 250);
+      if (at >= l.lines.first.time!) {
+        final line = l.lines[l.indexAt(at)].text.trim();
+        if (line != '♪') text = line;
+      }
+    }
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOut,
+      alignment: Alignment.topCenter,
+      child: !synced
+          ? const SizedBox(width: double.infinity, height: 30)
+          : Padding(
+              padding: const EdgeInsets.only(top: 22, bottom: 14),
+              child: SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  layoutBuilder: (cur, prev) => Stack(alignment: Alignment.topLeft, children: [...prev, ?cur]),
+                  child: Text(
+                    text,
+                    key: ValueKey(text),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: SikaText.ui(16, w: FontWeight.w700, color: SikaColors.text.withValues(alpha: 0.9)),
+                  ),
+                ),
+              ),
+            ),
+    );
   }
 }
 
