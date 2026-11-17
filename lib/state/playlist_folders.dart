@@ -109,7 +109,8 @@ class PlaylistFolders {
               if (await target.exists()) {
                 await current.delete(); // ancien doublon (copie déjà présente au bon endroit)
               } else {
-                await current.rename(target.path); // déplacement, pas de copie
+                // Déplacement, pas de copie (copie + suppression depuis l'ancien dossier privé).
+                await MediaStorage.move(current, target.path);
               }
               await MediaStorage.scan(current.path);
               await MediaStorage.scan(target.path);

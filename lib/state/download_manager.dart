@@ -167,7 +167,6 @@ class DownloadManager extends Notifier<DownloadsState> {
       } catch (_) {}
     }
     if (s.active.isNotEmpty) Future.microtask(_pump);
-    if (supported && s.done.isNotEmpty) Future.microtask(_migrateToMusic);
     return s;
   }
 
@@ -273,27 +272,6 @@ class DownloadManager extends Notifier<DownloadsState> {
     _pump();
   }
 
-  /// Déplace les anciens téléchargements (dossier privé) vers Music/YouPlay.
-  Future<void> _migrateToMusic() async {
-    final dir = await MediaStorage.downloadsDir();
-    if (!dir.path.contains('/Music/')) return; // stockage public indisponible
-    for (final it in state.done) {
-      final old = it.path;
-      if (old == null || old.startsWith(dir.path)) continue;
-      try {
-        final src = File(old);
-        if (!await src.exists()) continue;
-        final dst = await MediaStorage.fileFor(it.track);
-        await src.copy(dst.path);
-        await src.delete();
-        _update(it.track.id, (i) => i.copyWith(path: dst.path), persist: true);
-        await MediaStorage.scan(dst.path);
-      } catch (_) {
-        // On garde l'ancien emplacement : le titre reste lisible.
-      }
-    }
-  }
-
   Future<void> _pump() async {
     if (_working || !supported) return;
     _working = true;
@@ -319,7 +297,7 @@ class DownloadManager extends Notifier<DownloadsState> {
     final id = item.track.id;
     _update(id, (i) => i.copyWith(status: DownloadStatus.downloading, progress: 0));
     final file = await MediaStorage.fileFor(item.track);
-    final tmp = File('${file.path}.part');
+    final tmp = await MediaStorage.partialFile(file);
     final client = http.Client();
     _abort = Completer<void>();
     IOSink? sink;
@@ -360,7 +338,7 @@ class DownloadManager extends Notifier<DownloadsState> {
         if (state.items[id] != null) _update(id, (i) => i.copyWith(status: DownloadStatus.queued, progress: 0), persist: true);
         return;
       }
-      await tmp.rename(file.path);
+      await MediaStorage.move(tmp, file.path);
       _update(id, (i) => i.copyWith(status: DownloadStatus.done, progress: 1, path: file.path, bytes: received), persist: true);
       await MediaStorage.scan(file.path);
     } catch (e) {

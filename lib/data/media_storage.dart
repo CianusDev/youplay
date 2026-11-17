@@ -38,9 +38,12 @@ class MediaStorage {
       final music = await _ch.invokeMethod<String>('musicDir');
       final d = Directory('$music/YouPlay');
       await d.create(recursive: true);
-      // Test d'écriture réel (stockage partagé indisponible ou refusé).
-      final probe = File('${d.path}/.youplay');
+      // Test d'écriture réel (stockage partagé indisponible ou refusé). Android 11+ n'accepte que
+      // des fichiers audio dans Music : le test doit donc porter une extension audio, sinon il
+      // échoue toujours et tout part dans le dossier privé (invisible, effacé à la désinstallation).
+      final probe = File('${d.path}/.youplay-probe.m4a');
       await probe.writeAsString('ok');
+      await probe.delete();
       return _dir = d;
     } catch (_) {
       final d = Directory('${(await getApplicationSupportDirectory()).path}/downloads');
@@ -60,6 +63,25 @@ class MediaStorage {
       f = File('${dir.path}/$base ($i).m4a');
     }
     return f;
+  }
+
+  /// Fichier temporaire d'un téléchargement en cours, dans le dossier privé de l'app :
+  /// Music refuse les fichiers `.part` (type non audio).
+  static Future<File> partialFile(File target) async {
+    final d = Directory('${(await getApplicationSupportDirectory()).path}/partial');
+    await d.create(recursive: true);
+    return File('${d.path}/${target.uri.pathSegments.last}.part');
+  }
+
+  /// Déplace un fichier, y compris entre le stockage privé et Music (copie puis suppression).
+  static Future<File> move(File src, String dst) async {
+    try {
+      return await src.rename(dst);
+    } on FileSystemException {
+      final out = await src.copy(dst);
+      await src.delete();
+      return out;
+    }
   }
 
   /// Enregistre une image dans `Pictures/YouPlay` (visible dans la galerie). Retourne le chemin.
