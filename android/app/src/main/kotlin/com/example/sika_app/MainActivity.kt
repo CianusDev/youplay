@@ -13,10 +13,14 @@ import java.io.File
 
 // AudioServiceActivity : nécessaire pour la lecture en arrière-plan.
 class MainActivity : AudioServiceActivity() {
+    private val transfer by lazy { LibraryTransfer(this) }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         NewPipeBridge.register(messenger)
+        transfer.register(messenger)
+        transfer.handleIntent(intent)
 
         // Stockage public : dossier Music et indexation par la médiathèque Android.
         MethodChannel(messenger, "youplay/media").setMethodCallHandler { call, result ->
@@ -28,9 +32,7 @@ class MainActivity : AudioServiceActivity() {
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES).absolutePath,
                 )
                 "scan" -> {
-                    val path = call.argument<String>("path")!!
-                    val mime = if (path.endsWith(".png")) "image/png" else "audio/mp4"
-                    MediaScannerConnection.scanFile(applicationContext, arrayOf(path), arrayOf(mime), null)
+                    MediaStoreScan.scan(this, call.argument<String>("path")!!)
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -43,7 +45,7 @@ class MainActivity : AudioServiceActivity() {
                 "info" -> {
                     val info = packageManager.getPackageInfo(packageName, 0)
                     val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
-                    result.success(mapOf("versionCode" to code, "versionName" to info.versionName, "abis" to Build.SUPPORTED_ABIS.toList()))
+                    result.success(mapOf("versionCode" to code, "versionName" to info.versionName, "abis" to Build.SUPPORTED_ABIS.toList(), "packageName" to packageName))
                 }
                 "install" -> {
                     val file = File(call.argument<String>("path")!!)
@@ -69,5 +71,27 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        transfer.handleIntent(intent)
+    }
+
+    @Deprecated("Résultats des sélecteurs de fichiers et de la confirmation de suppression Android")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!transfer.onActivityResult(requestCode, resultCode, data)) {
+            @Suppress("DEPRECATION")
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+}
+
+/** Signale un fichier à la médiathèque Android (apps musique, explorateur). */
+object MediaStoreScan {
+    fun scan(context: android.content.Context, path: String) {
+        val mime = if (path.endsWith(".png")) "image/png" else "audio/mp4"
+        MediaScannerConnection.scanFile(context.applicationContext, arrayOf(path), arrayOf(mime), null)
     }
 }

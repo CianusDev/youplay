@@ -2,13 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/app_update.dart';
+import '../../data/library_backup.dart';
+import '../../data/media_storage.dart';
 import '../../l10n/l10n.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
+import '../components/migration_flow.dart';
 import '../components/sika_switch.dart';
 import '../components/update_dialog.dart';
 
@@ -55,6 +59,7 @@ class _SettingsSheet extends ConsumerWidget {
                 trailing: SikaSwitch(value: dl.wifiOnly, label: l.saveMobileData, onChanged: ref.read(downloadsProvider.notifier).setWifiOnly),
               ),
             const _LanguageRow(),
+            if (DownloadManager.supported) const _BackupRow(),
             if (DownloadManager.supported) const _BackgroundPlaybackRow(),
             if (DownloadManager.supported) const _UpdateRow(),
             const SizedBox(height: 16),
@@ -234,6 +239,106 @@ class _BackgroundPlaybackRowState extends State<_BackgroundPlaybackRow> {
               },
               child: Text(l.allow, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
             ),
+    );
+  }
+}
+
+/// Sauvegarde dans un fichier, restauration, et transfert entre l'ancienne et la nouvelle YouPlay.
+class _BackupRow extends StatefulWidget {
+  const _BackupRow();
+  @override
+  State<_BackupRow> createState() => _BackupRowState();
+}
+
+class _BackupRowState extends State<_BackupRow> {
+  String? _message;
+  MigrationInfo? _info;
+
+  @override
+  void initState() {
+    super.initState();
+    LibraryBackup.info().then((i) {
+      if (mounted) setState(() => _info = i);
+    }).catchError((_) {});
+  }
+
+  void _show(String m) {
+    if (mounted) setState(() => _message = m);
+  }
+
+  Future<void> _export() async {
+    final l = context.l10n;
+    try {
+      final ok = await LibraryBackup.saveToFile(await SharedPreferences.getInstance());
+      if (ok != null) _show(ok ? l.backupSaved : l.backupSaveFailed);
+    } catch (_) {
+      _show(l.backupSaveFailed);
+    }
+  }
+
+  Future<void> _restore() async {
+    final l = context.l10n;
+    final String? raw;
+    try {
+      raw = await LibraryBackup.pickFile();
+    } catch (_) {
+      return _show(l.backupInvalid);
+    }
+    if (raw == null) return; // annulé
+    final data = LibraryBackup.parse(raw);
+    if (data == null) return _show(l.backupInvalid);
+    if (!mounted || !await confirmAction(context, l.restoreTitle, l.restoreBody, l.restoreAction)) return;
+    // Sans « Musique et audio », les sons déjà sur le téléphone paraîtraient absents et seraient oubliés.
+    await MediaStorage.ensurePermission();
+    await LibraryBackup.restore(await SharedPreferences.getInstance(), data);
+    await LibraryBackup.restart();
+  }
+
+  Future<void> _transfer() async {
+    final i = _info!;
+    if (i.isLegacy) {
+      final prefs = await SharedPreferences.getInstance();
+      if (await LibraryBackup.send(prefs)) await prefs.setBool('youplay.migrate.sent', true);
+    } else {
+      await LibraryBackup.requestFromOther();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    final transfer = _info != null && _info!.otherReady;
+    return _Row(
+      title: l.backupTitle,
+      subtitle: _message ?? l.backupSub,
+      trailing: TextButton(
+        onPressed: () => showSikaSheet(context, (ctx) {
+          void run(Future<void> Function() action) {
+            Navigator.of(ctx).pop();
+            action();
+          }
+
+          return SafeArea(
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(l.backupTitle, style: SikaText.h2Small),
+              ),
+              SheetAction(icon: 'share', label: l.backupExport, onTap: () => run(_export)),
+              SheetAction(icon: 'download-circle', label: l.backupRestore, onTap: () => run(_restore)),
+              if (transfer)
+                SheetAction(
+                  icon: 'chevron-right',
+                  label: _info!.isLegacy ? l.migrateSendAction : l.migrateFetchAction,
+                  color: SikaColors.yellow,
+                  onTap: () => run(_transfer),
+                ),
+              const SizedBox(height: 8),
+            ]),
+          );
+        }),
+        child: Text(l.backupManage, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+      ),
     );
   }
 }

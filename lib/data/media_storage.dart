@@ -79,7 +79,14 @@ class MediaStorage {
       return await src.rename(dst);
     } on FileSystemException {
       final out = await src.copy(dst);
-      await src.delete();
+      try {
+        await src.delete();
+      } on FileSystemException {
+        // Fichier d'une autre app (ex. ancienne YouPlay, Android 11+) : lecture seule. On annule la
+        // copie plutôt que de laisser un doublon ; le son reste lisible à son emplacement actuel.
+        await out.delete();
+        rethrow;
+      }
       return out;
     }
   }

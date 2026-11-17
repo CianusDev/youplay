@@ -14,6 +14,7 @@ import 'router.dart';
 import 'state/playlist_folders.dart';
 import 'state/providers.dart';
 import 'theme/sika_tokens.dart';
+import 'ui/components/migration_flow.dart';
 import 'ui/components/splash_overlay.dart';
 import 'ui/components/update_dialog.dart';
 
@@ -49,13 +50,25 @@ Future<void> main() async {
     overrides: [prefsProvider.overrideWithValue(prefs)],
     child: const SikaApp(),
   ));
-  // Mise à jour publiée sur GitHub ? Proposée une fois l'écran d'accueil affiché.
-  if (!kIsWeb && Platform.isAndroid) {
-    Future.delayed(const Duration(seconds: 4), () {
-      final ctx = rootNavigatorKey.currentState?.overlay?.context;
-      if (ctx != null && ctx.mounted) checkForUpdate(ctx);
-    });
-  }
+  if (!kIsWeb && Platform.isAndroid) _scheduleStartupChecks();
+}
+
+/// Déménagement vers le nouvel identifiant, sinon mise à jour publiée sur GitHub :
+/// proposés une fois l'écran d'accueil affiché.
+void _scheduleStartupChecks() {
+  BuildContext? overlay() => rootNavigatorKey.currentState?.overlay?.context;
+
+  Future.delayed(const Duration(seconds: 4), () async {
+    final ctx = overlay();
+    if (ctx == null || !ctx.mounted || await runMigration(ctx)) return;
+    final again = overlay();
+    if (again != null && again.mounted) checkForUpdate(again);
+  });
+  // Retour dans l'app : l'autre YouPlay vient peut-être d'envoyer ou de demander la bibliothèque.
+  AppLifecycleListener(onResume: () {
+    final ctx = overlay();
+    if (ctx != null && ctx.mounted) runMigration(ctx, resumed: true);
+  });
 }
 
 class SikaApp extends ConsumerWidget {

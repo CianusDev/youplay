@@ -108,13 +108,17 @@ jobs:
             n=$(basename "$f"); abi=${n#app-}; abi=${abi%-release.apk}
             jq -n --arg abi "$abi" --arg name "$n" --argjson size "$(stat -c%s "$f")" '{($abi): {name: $name, size: $size}}'
           done | jq -s add)
+          # Identifiant de l'app : l'ancienne YouPlay sait ainsi qu'une version s'installe à côté d'elle.
+          appid=$(sed -n 's/.*applicationId = "\(.*\)".*/\1/p' android/app/build.gradle.kts)
+          test -n "$appid"
           jq -n \
+            --arg appid "$appid" \
             --argjson code ${{ steps.v.outputs.code }} \
             --arg name "${{ steps.v.outputs.name }}" \
             --arg tag "build-${{ steps.v.outputs.code }}" \
             --rawfile notes notes.md \
             --argjson apks "$apks" \
-            '{versionCode: $code, versionName: $name, tag: $tag, notes: $notes, apks: $apks}' > version.json
+            '{applicationId: $appid, versionCode: $code, versionName: $name, tag: $tag, notes: $notes, apks: $apks}' > version.json
           cat version.json
 
       - uses: softprops/action-gh-release@v2

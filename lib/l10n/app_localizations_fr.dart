@@ -1071,4 +1071,92 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get waitingForWifiBanner =>
       'Les téléchargements démarreront tout seuls dès que tu seras en Wi-Fi.';
+
+  @override
+  String get backupTitle => 'Sauvegarde';
+
+  @override
+  String get backupSub => 'Likes, playlists et téléchargements dans un fichier';
+
+  @override
+  String get backupManage => 'Gérer';
+
+  @override
+  String get backupExport => 'Exporter vers un fichier';
+
+  @override
+  String get backupRestore => 'Restaurer depuis un fichier';
+
+  @override
+  String get backupSaved => 'Sauvegarde enregistrée';
+
+  @override
+  String get backupSaveFailed => 'Impossible d\'enregistrer la sauvegarde';
+
+  @override
+  String get backupInvalid => 'Ce fichier n\'est pas une sauvegarde YouPlay';
+
+  @override
+  String get restoreTitle => 'Restaurer cette sauvegarde ?';
+
+  @override
+  String get restoreBody =>
+      'Ta bibliothèque actuelle sera remplacée, puis YouPlay redémarrera.';
+
+  @override
+  String get restoreAction => 'Restaurer';
+
+  @override
+  String get migrateSendAction => 'Transférer vers la nouvelle YouPlay';
+
+  @override
+  String get migrateFetchAction => 'Récupérer depuis l\'ancienne YouPlay';
+
+  @override
+  String get migrateTitle => 'YouPlay a déménagé';
+
+  @override
+  String get migrateLegacyBody =>
+      'La nouvelle YouPlay est installée. Transfère-lui ta bibliothèque : likes, playlists, historique et sons téléchargés.';
+
+  @override
+  String get migrateTransfer => 'Transférer';
+
+  @override
+  String get migrateLegacyDoneBody =>
+      'Ta bibliothèque est dans la nouvelle YouPlay. Cette ancienne version ne recevra plus de mises à jour : tu peux la désinstaller.';
+
+  @override
+  String get migrateUninstall => 'Désinstaller';
+
+  @override
+  String get migrateNewTitle => 'Bienvenue dans la nouvelle YouPlay';
+
+  @override
+  String get migrateNewBody =>
+      'L\'ancienne YouPlay est sur ce téléphone. Récupérer sa bibliothèque : likes, playlists, historique et sons téléchargés ?';
+
+  @override
+  String get migrateFetch => 'Récupérer';
+
+  @override
+  String get adoptTitle => 'Tes sons téléchargés';
+
+  @override
+  String get adoptBody =>
+      'Android les considère encore comme ceux de l\'ancienne YouPlay. Pour pouvoir les ranger et les supprimer, la nouvelle va les recopier : Android te demandera d\'autoriser la suppression des fichiers originaux.';
+
+  @override
+  String get adoptAction => 'Continuer';
+
+  @override
+  String get migrateDoneTitle => 'Bibliothèque transférée';
+
+  @override
+  String get migrateNewDoneBody =>
+      'Tout est là. Tu peux maintenant désinstaller l\'ancienne YouPlay.';
+
+  @override
+  String get updateNewAppNote =>
+      'Cette version s\'installe à côté de l\'ancienne (nouvel identifiant, pour les catalogues d\'apps libres). Ta bibliothèque sera transférée juste après.';
 }

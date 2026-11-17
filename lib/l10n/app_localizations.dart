@@ -1921,6 +1921,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloads will start automatically as soon as you\'re on Wi-Fi.'**
   String get waitingForWifiBanner;
+
+  /// No description provided for @backupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup'**
+  String get backupTitle;
+
+  /// No description provided for @backupSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes, playlists and downloads in a file'**
+  String get backupSub;
+
+  /// No description provided for @backupManage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get backupManage;
+
+  /// No description provided for @backupExport.
+  ///
+  /// In en, this message translates to:
+  /// **'Export to a file'**
+  String get backupExport;
+
+  /// No description provided for @backupRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from a file'**
+  String get backupRestore;
+
+  /// No description provided for @backupSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup saved'**
+  String get backupSaved;
+
+  /// No description provided for @backupSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the backup'**
+  String get backupSaveFailed;
+
+  /// No description provided for @backupInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This file isn\'t a YouPlay backup'**
+  String get backupInvalid;
+
+  /// No description provided for @restoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore this backup?'**
+  String get restoreTitle;
+
+  /// No description provided for @restoreBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current library will be replaced, then YouPlay will restart.'**
+  String get restoreBody;
+
+  /// No description provided for @restoreAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get restoreAction;
+
+  /// No description provided for @migrateSendAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer to the new YouPlay'**
+  String get migrateSendAction;
+
+  /// No description provided for @migrateFetchAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Get library from the old YouPlay'**
+  String get migrateFetchAction;
+
+  /// No description provided for @migrateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'YouPlay has moved'**
+  String get migrateTitle;
+
+  /// No description provided for @migrateLegacyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The new YouPlay is installed. Transfer your library to it: likes, playlists, history and downloaded songs.'**
+  String get migrateLegacyBody;
+
+  /// No description provided for @migrateTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer'**
+  String get migrateTransfer;
+
+  /// No description provided for @migrateLegacyDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your library is in the new YouPlay. This old version won\'t get updates anymore: you can uninstall it.'**
+  String get migrateLegacyDoneBody;
+
+  /// No description provided for @migrateUninstall.
+  ///
+  /// In en, this message translates to:
+  /// **'Uninstall'**
+  String get migrateUninstall;
+
+  /// No description provided for @migrateNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to the new YouPlay'**
+  String get migrateNewTitle;
+
+  /// No description provided for @migrateNewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The old YouPlay is on this phone. Bring over its library: likes, playlists, history and downloaded songs?'**
+  String get migrateNewBody;
+
+  /// No description provided for @migrateFetch.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring it over'**
+  String get migrateFetch;
+
+  /// No description provided for @adoptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your downloaded songs'**
+  String get adoptTitle;
+
+  /// No description provided for @adoptBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Android still treats them as the old YouPlay\'s. To organise and delete them, the new one will copy them: Android will ask you to allow deleting the original files.'**
+  String get adoptBody;
+
+  /// No description provided for @adoptAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get adoptAction;
+
+  /// No description provided for @migrateDoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Library transferred'**
+  String get migrateDoneTitle;
+
+  /// No description provided for @migrateNewDoneBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Everything is here. You can now uninstall the old YouPlay.'**
+  String get migrateNewDoneBody;
+
+  /// No description provided for @updateNewAppNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This version installs next to the old one (new app ID, for free-software app stores). Your library is transferred right after.'**
+  String get updateNewAppNote;
 }
 
 class _AppLocalizationsDelegate

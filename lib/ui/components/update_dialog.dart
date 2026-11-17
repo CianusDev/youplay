@@ -83,6 +83,10 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('YouPlay ${r.versionName}$mb', style: SikaText.meta),
+          if (r.newApp) ...[
+            const SizedBox(height: 12),
+            Text(l.updateNewAppNote, style: SikaText.ui(14, color: SikaColors.text, height: 1.45)),
+          ],
           if (r.notes.isNotEmpty) ...[
             const SizedBox(height: 12),
             ConstrainedBox(

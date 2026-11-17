@@ -1064,4 +1064,92 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get waitingForWifiBanner =>
       'Downloads will start automatically as soon as you\'re on Wi-Fi.';
+
+  @override
+  String get backupTitle => 'Backup';
+
+  @override
+  String get backupSub => 'Likes, playlists and downloads in a file';
+
+  @override
+  String get backupManage => 'Manage';
+
+  @override
+  String get backupExport => 'Export to a file';
+
+  @override
+  String get backupRestore => 'Restore from a file';
+
+  @override
+  String get backupSaved => 'Backup saved';
+
+  @override
+  String get backupSaveFailed => 'Couldn\'t save the backup';
+
+  @override
+  String get backupInvalid => 'This file isn\'t a YouPlay backup';
+
+  @override
+  String get restoreTitle => 'Restore this backup?';
+
+  @override
+  String get restoreBody =>
+      'Your current library will be replaced, then YouPlay will restart.';
+
+  @override
+  String get restoreAction => 'Restore';
+
+  @override
+  String get migrateSendAction => 'Transfer to the new YouPlay';
+
+  @override
+  String get migrateFetchAction => 'Get library from the old YouPlay';
+
+  @override
+  String get migrateTitle => 'YouPlay has moved';
+
+  @override
+  String get migrateLegacyBody =>
+      'The new YouPlay is installed. Transfer your library to it: likes, playlists, history and downloaded songs.';
+
+  @override
+  String get migrateTransfer => 'Transfer';
+
+  @override
+  String get migrateLegacyDoneBody =>
+      'Your library is in the new YouPlay. This old version won\'t get updates anymore: you can uninstall it.';
+
+  @override
+  String get migrateUninstall => 'Uninstall';
+
+  @override
+  String get migrateNewTitle => 'Welcome to the new YouPlay';
+
+  @override
+  String get migrateNewBody =>
+      'The old YouPlay is on this phone. Bring over its library: likes, playlists, history and downloaded songs?';
+
+  @override
+  String get migrateFetch => 'Bring it over';
+
+  @override
+  String get adoptTitle => 'Your downloaded songs';
+
+  @override
+  String get adoptBody =>
+      'Android still treats them as the old YouPlay\'s. To organise and delete them, the new one will copy them: Android will ask you to allow deleting the original files.';
+
+  @override
+  String get adoptAction => 'Continue';
+
+  @override
+  String get migrateDoneTitle => 'Library transferred';
+
+  @override
+  String get migrateNewDoneBody =>
+      'Everything is here. You can now uninstall the old YouPlay.';
+
+  @override
+  String get updateNewAppNote =>
+      'This version installs next to the old one (new app ID, for free-software app stores). Your library is transferred right after.';
 }

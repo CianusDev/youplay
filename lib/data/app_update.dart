@@ -8,12 +8,23 @@ import 'package:path_provider/path_provider.dart';
 
 /// Une version publiée sur les releases GitHub (tag `build-<versionCode>`).
 class AppRelease {
-  const AppRelease({required this.versionCode, required this.versionName, required this.notes, required this.apkUrl, required this.apkSize});
+  const AppRelease({
+    required this.versionCode,
+    required this.versionName,
+    required this.notes,
+    required this.apkUrl,
+    required this.apkSize,
+    this.newApp = false,
+  });
   final int versionCode;
   final String versionName;
   final String notes;
   final String apkUrl;
   final int apkSize;
+
+  /// Identifiant d'app différent : l'APK s'installe à côté de l'app actuelle (déménagement
+  /// `com.example.sika_app` → `io.github.cianusdev.youplay`), puis la bibliothèque est transférée.
+  final bool newApp;
 }
 
 /// Mises à jour hors Play Store : chaque push sur `main` publie une release GitHub (voir
@@ -67,6 +78,7 @@ class AppUpdater {
       notes: (j['notes'] as String? ?? '').trim(),
       apkUrl: 'https://github.com/$repo/releases/download/$tag/${apk['name']}',
       apkSize: (apk['size'] as num?)?.toInt() ?? 0,
+      newApp: j['applicationId'] is String && j['applicationId'] != (await _deviceInfo())['packageName'],
     );
   }
 
