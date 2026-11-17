@@ -97,3 +97,7 @@ flutter test
 - **Recherche :** la recherche YouTube Music de l'extracteur ne renvoie rien actuellement. L'app cherche donc parmi les vidéos YouTube et nettoie leurs titres.
 - **Paroles :** sur un clip avec une intro, elles peuvent être légèrement décalées, car le minutage vient de la version audio.
 - **Identifiant :** le nom affiché est YouPlay, mais l'identifiant Android reste `com.example.sika_app`. Le changer ferait perdre les données déjà sur le téléphone.
+
+## Licence
+
+YouPlay est distribué sous licence [GNU GPL v3](LICENSE), comme [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor) sur lequel il s'appuie : tu peux utiliser, modifier et redistribuer l'app, à condition de publier tes modifications sous la même licence.
