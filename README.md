@@ -15,7 +15,7 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 
 ### [⬇ Download the latest APK](https://github.com/CianusDev/youplay/releases/latest)
 
-[Français](README.fr.md)
+[Website](https://cianusdev.github.io/youplay/) · [Français](README.fr.md)
 
 </div>
 

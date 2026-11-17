@@ -1,6 +1,6 @@
 # YouPlay
 
-[English](README.md) · **[⬇ Télécharger la dernière version](https://github.com/CianusDev/youplay/releases/latest)**
+[English](README.md) · [Site officiel](https://cianusdev.github.io/youplay/) · **[⬇ Télécharger la dernière version](https://github.com/CianusDev/youplay/releases/latest)**
 
 Lecteur de musique Android open source, façon Spotify, sans pub ni limite de sauts. Le catalogue vient de YouTube, via [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor).
 
