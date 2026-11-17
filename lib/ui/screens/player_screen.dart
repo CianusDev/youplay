@@ -393,13 +393,30 @@ class _PlayerScreenState extends ConsumerState<PlayerScreen> {
 /// Ligne de paroles en cours, au-dessus du titre (paroles synchronisées uniquement).
 /// Même mouvement que la carte des paroles : la nouvelle ligne monte et s'allume (500 ms,
 /// easeOutCubic, zoom 0,96 → 1), l'ancienne part vers le haut en s'effaçant.
-/// Le texte n'est jamais coupé : la hauteur suit la ligne en douceur.
+/// Zone de hauteur fixe (2 lignes, comme Spotify) : le titre en dessous ne bouge jamais.
+/// Une ligne trop longue est écrite plus petit (16 → 13 pt) avant d'être coupée.
 class _NowLyricLine extends ConsumerWidget {
   const _NowLyricLine({required this.track, required this.position});
   final Track track;
   final Duration position;
 
   static const _dur = Duration(milliseconds: 500);
+
+  static TextStyle _style(double size) => SikaText.ui(size, w: FontWeight.w700, height: 1.3, color: SikaColors.text.withValues(alpha: 0.9));
+
+  /// Plus grande taille (16 → 13) qui tient sur 2 lignes dans [maxWidth].
+  static double _fitSize(String text, double maxWidth, TextScaler scaler) {
+    for (final size in const [16.0, 15.0, 14.0]) {
+      final tp = TextPainter(
+        text: TextSpan(text: text, style: _style(size)),
+        textDirection: TextDirection.ltr,
+        textScaler: scaler,
+        maxLines: 2,
+      )..layout(maxWidth: maxWidth);
+      if (!tp.didExceedMaxLines) return size;
+    }
+    return 13;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -421,6 +438,8 @@ class _NowLyricLine extends ConsumerWidget {
     }
     // Clé = index de la ligne (un refrain répété s'anime aussi).
     final key = ValueKey<int>(idx);
+    final scaler = MediaQuery.textScalerOf(context);
+    final boxHeight = scaler.scale(16) * 1.3 * 2 + 2; // 2 lignes à la taille normale
     return AnimatedSize(
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutCubic,
@@ -429,44 +448,48 @@ class _NowLyricLine extends ConsumerWidget {
           ? const SizedBox(width: double.infinity, height: 30)
           : Padding(
               padding: const EdgeInsets.only(top: 22, bottom: 14),
-              child: ClipRect(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: double.infinity, minHeight: 22),
-                  child: AnimatedSwitcher(
-                    duration: _dur,
-                    // Les lignes sortantes ne comptent pas dans la hauteur : seule la ligne en cours la fixe.
-                    layoutBuilder: (cur, prev) => Stack(
-                      alignment: Alignment.topLeft,
-                      children: [
-                        for (final p in prev) Positioned(left: 0, right: 0, top: 0, child: p),
-                        ?cur,
-                      ],
-                    ),
-                    // Les deux lignes ne se superposent jamais : l'ancienne monte et s'efface sur les
-                    // 40 premiers % (valeur 1 → 0,6), la nouvelle n'apparaît qu'ensuite (0,4 → 1).
-                    transitionBuilder: (child, anim) {
-                      final incoming = child.key == key;
-                      final fade = CurvedAnimation(
-                        parent: anim,
-                        curve: incoming ? const Interval(0.4, 1, curve: Curves.easeOut) : const Interval(0.6, 1, curve: Curves.easeIn),
-                      );
-                      final move = CurvedAnimation(parent: anim, curve: incoming ? Curves.easeOutCubic : Curves.easeInCubic);
-                      return SlideTransition(
-                        position: Tween<Offset>(begin: Offset(0, incoming ? 0.5 : -0.5), end: Offset.zero).animate(move),
-                        child: FadeTransition(
-                          opacity: fade,
-                          child: ScaleTransition(
-                            scale: Tween<double>(begin: 0.96, end: 1).animate(anim),
-                            alignment: Alignment.centerLeft,
-                            child: child,
+              child: SizedBox(
+                width: double.infinity,
+                height: boxHeight,
+                child: ClipRect(
+                  child: LayoutBuilder(
+                    builder: (context, box) => AnimatedSwitcher(
+                      duration: _dur,
+                      layoutBuilder: (cur, prev) => Stack(
+                        fit: StackFit.expand,
+                        children: [...prev, ?cur],
+                      ),
+                      // Les deux lignes ne se superposent jamais : l'ancienne monte et s'efface sur les
+                      // 40 premiers % (valeur 1 → 0,6), la nouvelle n'apparaît qu'ensuite (0,4 → 1).
+                      transitionBuilder: (child, anim) {
+                        final incoming = child.key == key;
+                        final fade = CurvedAnimation(
+                          parent: anim,
+                          curve: incoming ? const Interval(0.4, 1, curve: Curves.easeOut) : const Interval(0.6, 1, curve: Curves.easeIn),
+                        );
+                        final move = CurvedAnimation(parent: anim, curve: incoming ? Curves.easeOutCubic : Curves.easeInCubic);
+                        return SlideTransition(
+                          position: Tween<Offset>(begin: Offset(0, incoming ? 0.5 : -0.5), end: Offset.zero).animate(move),
+                          child: FadeTransition(
+                            opacity: fade,
+                            child: ScaleTransition(
+                              scale: Tween<double>(begin: 0.96, end: 1).animate(anim),
+                              alignment: Alignment.centerLeft,
+                              child: child,
+                            ),
                           ),
+                        );
+                      },
+                      child: Align(
+                        key: key,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          text,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: _style(_fitSize(text, box.maxWidth, scaler)),
                         ),
-                      );
-                    },
-                    child: SizedBox(
-                      key: key,
-                      width: double.infinity,
-                      child: Text(text, style: SikaText.ui(16, w: FontWeight.w700, color: SikaColors.text.withValues(alpha: 0.9))),
+                      ),
                     ),
                   ),
                 ),
@@ -494,7 +517,7 @@ class _LyricsCard extends ConsumerWidget {
     } else if (l == null) {
       body = Text('Paroles indisponibles pour ce titre.', style: other.copyWith(fontSize: 17));
     } else {
-      // Fenêtre de hauteur fixe : les paroles défilent dedans, la carte ne saute plus.
+      // Fenêtre de hauteur fixe, défilement au doigt (le suivi automatique est sous la pochette).
       body = SizedBox(
         height: 210,
         child: ShaderMask(
@@ -538,18 +561,6 @@ class _LyricsCard extends ConsumerWidget {
                   ),
                 ),
               const Spacer(),
-              if (l != null) ...[
-                IconButtonSika(
-                  icon: 'share',
-                  label: 'Partager des paroles',
-                  size: 36,
-                  iconSize: 17,
-                  color: ink,
-                  background: const Color(0x1F141208),
-                  onTap: () => showFullLyrics(context, track, l, select: true),
-                ),
-                const SizedBox(width: 8),
-              ],
               if (l != null)
                 IconButtonSika(
                   icon: 'expand',
@@ -982,7 +993,9 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
     final offset = ref.watch(lyricsOffsetProvider(widget.trackId));
     final cur = l.synced ? l.indexAt(pos - offset + const Duration(milliseconds: 250)) : -1;
     final selecting = widget.selected != null;
-    if (cur != _current && !selecting) {
+    // Carte (compact) : pas de suivi automatique, la ligne sous la pochette le fait déjà.
+    // On la fait défiler au doigt ; le suivi reste en plein écran.
+    if (cur != _current && !selecting && !widget.compact) {
       final first = _current == -1;
       _current = cur;
       if (cur >= 0) WidgetsBinding.instance.addPostFrameCallback((_) => _follow(cur, animate: !first));
@@ -1001,8 +1014,7 @@ class _LyricsViewState extends ConsumerState<_LyricsView> {
       },
       child: SingleChildScrollView(
         controller: _ctrl,
-        physics: compact ? const NeverScrollableScrollPhysics() : null,
-        padding: compact ? const EdgeInsets.symmetric(vertical: 80) : const EdgeInsets.fromLTRB(24, 24, 24, 320),
+        padding: compact ? const EdgeInsets.only(top: 24, bottom: 40) : const EdgeInsets.fromLTRB(24, 24, 24, 320),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
