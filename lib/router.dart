@@ -13,7 +13,8 @@ import 'ui/screens/library_screen.dart';
 import 'ui/screens/player_screen.dart';
 import 'ui/screens/search_screen.dart';
 
-final _rootKey = GlobalKey<NavigatorState>();
+/// Navigateur racine : sert aussi à afficher la proposition de mise à jour au démarrage.
+final rootNavigatorKey = GlobalKey<NavigatorState>();
 const _tabs = ['/home', '/search', '/library', '/downloads'];
 
 GoRoute _collectionRoute() => GoRoute(
@@ -28,7 +29,7 @@ GoRoute _collectionRoute() => GoRoute(
     );
 
 final router = GoRouter(
-  navigatorKey: _rootKey,
+  navigatorKey: rootNavigatorKey,
   initialLocation: '/home',
   routes: [
     StatefulShellRoute.indexedStack(
@@ -51,7 +52,7 @@ final router = GoRouter(
     ),
     GoRoute(
       path: '/player',
-      parentNavigatorKey: _rootKey,
+      parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (_, state) => CustomTransitionPage(
         key: state.pageKey,
         fullscreenDialog: true,

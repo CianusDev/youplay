@@ -13,6 +13,7 @@ import 'state/playlist_folders.dart';
 import 'state/providers.dart';
 import 'theme/sika_tokens.dart';
 import 'ui/components/splash_overlay.dart';
+import 'ui/components/update_dialog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,13 @@ Future<void> main() async {
     overrides: [prefsProvider.overrideWithValue(prefs)],
     child: const SikaApp(),
   ));
+  // Mise à jour publiée sur GitHub ? Proposée une fois l'écran d'accueil affiché.
+  if (!kIsWeb && Platform.isAndroid) {
+    Future.delayed(const Duration(seconds: 4), () {
+      final ctx = rootNavigatorKey.currentState?.overlay?.context;
+      if (ctx != null && ctx.mounted) checkForUpdate(ctx);
+    });
+  }
 }
 
 class SikaApp extends ConsumerWidget {

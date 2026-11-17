@@ -1,11 +1,15 @@
 package com.example.sika_app
 
+import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaScannerConnection
+import android.os.Build
 import android.os.Environment
+import androidx.core.content.FileProvider
 import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
 
 // AudioServiceActivity : nécessaire pour la lecture en arrière-plan.
 class MainActivity : AudioServiceActivity() {
@@ -27,6 +31,28 @@ class MainActivity : AudioServiceActivity() {
                     val path = call.argument<String>("path")!!
                     val mime = if (path.endsWith(".png")) "image/png" else "audio/mp4"
                     MediaScannerConnection.scanFile(applicationContext, arrayOf(path), arrayOf(mime), null)
+                    result.success(null)
+                }
+                else -> result.notImplemented()
+            }
+        }
+
+        // Mises à jour : version installée, ABI du téléphone, ouverture de l'installateur Android.
+        MethodChannel(messenger, "youplay/update").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "info" -> {
+                    val info = packageManager.getPackageInfo(packageName, 0)
+                    val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+                    result.success(mapOf("versionCode" to code, "versionName" to info.versionName, "abis" to Build.SUPPORTED_ABIS.toList()))
+                }
+                "install" -> {
+                    val file = File(call.argument<String>("path")!!)
+                    val uri = FileProvider.getUriForFile(this, "$packageName.updates", file)
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/vnd.android.package-archive")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    }
+                    startActivity(intent)
                     result.success(null)
                 }
                 else -> result.notImplemented()

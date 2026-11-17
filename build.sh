@@ -62,8 +62,11 @@ echo "▶ Téléphone : $MODEL ($SERIAL, $ABI)"
 
 # --- build -------------------------------------------------------------------
 if [[ $SKIP_BUILD -eq 0 ]]; then
-  echo "▶ flutter build apk --release --split-per-abi"
-  flutter build apk --release --split-per-abi
+  # Même numérotation que la CI (.github/workflows/release.yml) : nombre de commits.
+  # Sinon une build locale serait « plus ancienne » qu'une release et Android refuserait l'installation.
+  CODE="$(git rev-list --count HEAD)"
+  echo "▶ flutter build apk --release --split-per-abi (version 1.0.$CODE, code $CODE)"
+  flutter build apk --release --split-per-abi --build-number="$CODE" --build-name="1.0.$CODE"
 fi
 
 APK="$OUT/app-$ABI-release.apk"

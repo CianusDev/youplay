@@ -3,11 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../data/app_update.dart';
 import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
 import '../components/sika_switch.dart';
+import '../components/update_dialog.dart';
 
 Future<void> showSettingsSheet(BuildContext context) => showSikaSheet(context, (ctx) => const _SettingsSheet());
 
@@ -45,6 +47,7 @@ class _SettingsSheet extends ConsumerWidget {
                 trailing: SikaSwitch(value: dl.offlineMode, label: 'Mode hors ligne', onChanged: ref.read(downloadsProvider.notifier).setOffline),
               ),
             if (DownloadManager.supported) const _BackgroundPlaybackRow(),
+            if (DownloadManager.supported) const _UpdateRow(),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(16),
@@ -81,6 +84,24 @@ class _Row extends StatelessWidget {
           ),
           trailing,
         ]),
+      );
+}
+
+/// Version installée + recherche manuelle d'une mise à jour.
+class _UpdateRow extends StatelessWidget {
+  const _UpdateRow();
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+        future: AppUpdater.currentVersionName(),
+        builder: (context, snap) => _Row(
+          title: 'Mises à jour',
+          subtitle: snap.hasData && snap.data!.isNotEmpty ? 'Version ${snap.data}' : 'Version installée',
+          trailing: TextButton(
+            onPressed: () => checkForUpdate(context, manual: true),
+            child: Text('Vérifier', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+          ),
+        ),
       );
 }
 
