@@ -65,10 +65,29 @@ jobs:
           jq -r '.commits[]?.message | split("\n")[0] | "- " + .' "$GITHUB_EVENT_PATH" > notes.md
           [ -s notes.md ] || git log -1 --format='- %s' > notes.md
 
+      # Lu par l'app via releases/latest/download/version.json : pas l'API GitHub, donc pas
+      # sa limite de 60 requêtes/heure par adresse IP (vite atteinte sur les réseaux mobiles).
+      - name: version.json
+        run: |
+          apks=$(for f in build/app/outputs/flutter-apk/app-*-release.apk; do
+            n=$(basename "$f"); abi=${n#app-}; abi=${abi%-release.apk}
+            jq -n --arg abi "$abi" --arg name "$n" --argjson size "$(stat -c%s "$f")" '{($abi): {name: $name, size: $size}}'
+          done | jq -s add)
+          jq -n \
+            --argjson code ${{ steps.v.outputs.code }} \
+            --arg name "${{ steps.v.outputs.name }}" \
+            --arg tag "build-${{ steps.v.outputs.code }}" \
+            --rawfile notes notes.md \
+            --argjson apks "$apks" \
+            '{versionCode: $code, versionName: $name, tag: $tag, notes: $notes, apks: $apks}' > version.json
+          cat version.json
+
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ steps.v.outputs.code }}
           name: YouPlay ${{ steps.v.outputs.name }}
           body_path: notes.md
-          files: build/app/outputs/flutter-apk/app-*-release.apk
+          files: |
+            build/app/outputs/flutter-apk/app-*-release.apk
+            version.json
           make_latest: true

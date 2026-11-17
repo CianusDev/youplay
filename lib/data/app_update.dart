@@ -35,34 +35,37 @@ class AppUpdater {
   static Future<String> currentVersionName() async => (await _deviceInfo())['versionName'] as String? ?? '';
 
   /// Dernière release si elle est plus récente que l'app installée, sinon null.
+  /// Lit `version.json` publié avec chaque release, via une simple redirection GitHub :
+  /// l'API REST est évitée car limitée à 60 requêtes/heure par adresse IP, vite atteinte
+  /// derrière le NAT d'un opérateur mobile (la vérification échouait alors sans raison visible).
   static Future<AppRelease?> checkNewer() async {
     if (!Platform.isAndroid) return null;
     final res = await http.get(
-      Uri.parse('https://api.github.com/repos/$repo/releases/latest'),
-      headers: const {'Accept': 'application/vnd.github+json', 'User-Agent': 'YouPlay-app'},
+      Uri.parse('https://github.com/$repo/releases/latest/download/version.json'),
+      headers: const {'User-Agent': 'YouPlay-app'},
     ).timeout(const Duration(seconds: 15));
-    if (res.statusCode != 200) return null;
-    final j = jsonDecode(res.body) as Map<String, dynamic>;
-    final code = int.tryParse((j['tag_name'] as String? ?? '').replaceFirst('build-', ''));
-    if (code == null || code <= await currentBuild()) return null;
+    if (res.statusCode == 404) return null; // aucune release avec version.json
+    if (res.statusCode != 200) throw HttpException('HTTP ${res.statusCode}');
+    final j = jsonDecode(utf8.decode(res.bodyBytes)) as Map<String, dynamic>;
+    final code = (j['versionCode'] as num?)?.toInt();
+    final tag = j['tag'] as String?;
+    if (code == null || tag == null || code <= await currentBuild()) return null;
 
     // APK de l'architecture du téléphone (arm64-v8a sur presque tous les téléphones récents).
-    final assets = (j['assets'] as List? ?? const []).cast<Map<String, dynamic>>();
+    final apks = (j['apks'] as Map? ?? const {}).cast<String, dynamic>();
     final abis = ((await _deviceInfo())['abis'] as List? ?? const []).cast<String>();
     Map<String, dynamic>? apk;
-    for (final abi in [...abis, 'universal']) {
-      apk = assets.where((a) => (a['name'] as String).contains('-$abi-')).firstOrNull;
+    for (final abi in abis) {
+      apk = (apks[abi] as Map?)?.cast<String, dynamic>();
       if (apk != null) break;
     }
-    apk ??= assets.where((a) => (a['name'] as String).endsWith('.apk')).firstOrNull;
-    if (apk == null) return null;
+    if (apk == null) return null; // aucune version pour ce processeur
 
-    final name = (j['name'] as String? ?? '').replaceFirst('YouPlay ', '');
     return AppRelease(
       versionCode: code,
-      versionName: name.isEmpty ? 'build $code' : name,
-      notes: (j['body'] as String? ?? '').trim(),
-      apkUrl: apk['browser_download_url'] as String,
+      versionName: j['versionName'] as String? ?? 'build $code',
+      notes: (j['notes'] as String? ?? '').trim(),
+      apkUrl: 'https://github.com/$repo/releases/download/$tag/${apk['name']}',
       apkSize: (apk['size'] as num?)?.toInt() ?? 0,
     );
   }
