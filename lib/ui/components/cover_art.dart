@@ -1,7 +1,7 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/sika_tokens.dart';
+import 'artwork_image.dart';
 
 /// Pochette : image réelle si disponible, sinon une des 6 pochettes géométriques (c1..c6).
 class CoverArt extends StatelessWidget {
@@ -51,13 +51,8 @@ class CoverArt extends StatelessWidget {
     final placeholder = CustomPaint(painter: _CoverPainter(variant), child: const SizedBox.expand());
     Widget child = imageUrl == null
         ? placeholder
-        : CachedNetworkImage(
-            imageUrl: imageUrl!,
-            fit: BoxFit.cover,
-            fadeInDuration: const Duration(milliseconds: 200),
-            placeholder: (_, _) => placeholder,
-            errorWidget: (_, _, _) => placeholder,
-          );
+        // Taille libre (pochette du lecteur, en-têtes) ou ≥ 120 : version haute définition.
+        : ArtworkImage(url: imageUrl!, large: size == null || size! >= 120, placeholder: placeholder);
     final br = circle ? BorderRadius.circular(SikaRadius.pill) : (borderRadius ?? BorderRadius.circular(radius));
     child = ClipRRect(borderRadius: br, child: child);
     if (outlined && variant == 6 && imageUrl == null) {

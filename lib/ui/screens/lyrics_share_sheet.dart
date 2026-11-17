@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -14,6 +13,7 @@ import '../../data/models.dart';
 import '../../state/download_manager.dart';
 import '../../state/providers.dart';
 import '../../theme/sika_tokens.dart';
+import '../components/artwork_image.dart';
 import '../components/common.dart';
 import '../components/cover_art.dart';
 import '../components/youplay_logo.dart';
@@ -156,7 +156,7 @@ class _LyricsCardEditorState extends ConsumerState<LyricsCardEditor> {
                                 Positioned.fill(
                                   child: ImageFiltered(
                                     imageFilter: ui.ImageFilter.blur(sigmaX: 28, sigmaY: 28),
-                                    child: CachedNetworkImage(imageUrl: t.artworkUrl!, fit: BoxFit.cover),
+                                    child: ArtworkImage(url: t.artworkUrl!, large: true),
                                   ),
                                 ),
                               if (useArtwork) Positioned.fill(child: ColoredBox(color: Colors.black.withValues(alpha: 0.35))),
