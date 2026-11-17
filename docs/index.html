@@ -7,6 +7,22 @@
 <meta name="description" content="YouPlay, le lecteur de musique Android open source : toute la musique de YouTube sans pub ni limite de sauts, en arrière-plan et hors ligne, avec paroles synchronisées. Gratuit, sans compte.">
 <meta name="theme-color" content="#0F0E0B">
 <link rel="canonical" href="https://cianusdev.github.io/youplay/">
+<link rel="alternate" hreflang="fr" href="https://cianusdev.github.io/youplay/">
+<link rel="alternate" hreflang="en" href="https://cianusdev.github.io/youplay/en/">
+<link rel="alternate" hreflang="x-default" href="https://cianusdev.github.io/youplay/en/">
+<meta property="og:locale:alternate" content="en_US">
+<script>
+// Première visite depuis un navigateur qui n'est pas en français : version anglaise.
+// Le choix fait avec le sélecteur FR · EN est mémorisé ; les robots d'indexation ne sont pas redirigés.
+(function () {
+  try {
+    if (/bot|crawl|spider|slurp|facebookexternalhit|preview/i.test(navigator.userAgent)) return;
+    var saved = localStorage.getItem('yp-lang');
+    var lang = saved || ((navigator.languages && navigator.languages[0]) || navigator.language || 'fr');
+    if (!/^fr/i.test(lang)) location.replace('en/' + location.hash);
+  } catch (e) {}
+})();
+</script>
 <link rel="icon" type="image/png" href="assets/icon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
 <link rel="preload" href="assets/fonts/BricolageGrotesque-Variable.ttf" as="font" type="font/ttf" crossorigin>
@@ -83,6 +99,7 @@ a{color:#FFD60A}a:hover{color:#FFE878}
 .lyr{position:static !important;text-align:left !important;margin:28px 0 20px;font-size:22px !important}
 .hero-phones{margin-top:48px !important}
 }
+.langs a{color:#A39E8F;text-decoration:none;padding:6px 4px}.langs a[aria-current]{color:#F6F3EA}.langs a:hover{color:#F6F3EA}@media (max-width:640px){.hdr-dl{padding:0 14px !important;font-size:13px !important}.hdr-dl svg{display:none}.hdr-x{display:none}}.hdr-dl{white-space:nowrap}
 </style>
 </head>
 <body>
@@ -101,10 +118,10 @@ a{color:#FFD60A}a:hover{color:#FFE878}
 <a href="#install" style="color: #C9C3B3; text-decoration: none">Installer</a>
 <a href="#faq" style="color: #C9C3B3; text-decoration: none">FAQ</a>
 </nav>
-<a class="btn-y" href="https://github.com/CianusDev/youplay/releases/latest/download/YouPlay.apk" download style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; background: #FFD60A; color: #141208; font-weight: 800; font-size: 14px; text-decoration: none">
+<div style="display: flex; align-items: center; gap: 14px"><nav class="langs" aria-label="Langue" style="display: flex; align-items: center; font-size: 13px; font-weight: 800; letter-spacing: 0.04em"><a href="./" hreflang="fr" lang="fr" data-lang="fr" aria-current="page">FR</a><span aria-hidden="true" style="color: #3A372D">·</span><a href="en/" hreflang="en" lang="en" data-lang="en">EN</a></nav><a class="btn-y hdr-dl" href="https://github.com/CianusDev/youplay/releases/latest/download/YouPlay.apk" download style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 20px; border-radius: 999px; background: #FFD60A; color: #141208; font-weight: 800; font-size: 14px; text-decoration: none">
 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7.5 10.5 12 15l4.5-4.5M5 20h14"/></svg>
-Télécharger l'APK
-</a>
+Télécharger<span class="hdr-x"> l'APK</span>
+</a></div>
 </div>
 </header>
 
@@ -723,6 +740,11 @@ document.querySelectorAll('.acc-btn[data-acc]').forEach(function (btn) {
     });
     if (!wasOpen) { item.classList.add('open'); btn.setAttribute('aria-expanded', 'true'); }
   });
+});
+
+// Langue choisie : mémorisée pour la redirection automatique de la page d'accueil
+document.querySelectorAll('.langs a[data-lang]').forEach(function (a) {
+  a.addEventListener('click', function () { try { localStorage.setItem('yp-lang', a.dataset.lang); } catch (e) {} });
 });
 </script>
 </body>
