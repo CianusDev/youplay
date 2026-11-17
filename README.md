@@ -43,7 +43,7 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 
 ## Install
 
-1. Download `app-arm64-v8a-release.apk` from the [latest release](https://github.com/CianusDev/youplay/releases/latest) (`armeabi-v7a` for older phones).
+1. Download [**YouPlay.apk**](https://github.com/CianusDev/youplay/releases/latest/download/YouPlay.apk) on your phone (older 32-bit phones: `app-armeabi-v7a-release.apk` from the [latest release](https://github.com/CianusDev/youplay/releases/latest)).
 2. Open it and allow your browser or file manager to install apps.
 3. That's it: new versions are offered in the app (Settings › Updates › Check).
 
