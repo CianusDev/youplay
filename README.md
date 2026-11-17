@@ -7,7 +7,7 @@
 **An open-source Android music player built on YouTube.**<br>
 No ads, no skip limits, background & offline playback, synced lyrics.
 
-[![Latest release](https://img.shields.io/github/v/release/CianusDev/youplay?label=release&color=FFD60A&labelColor=0F0E0B)](https://github.com/CianusDev/youplay/releases/latest)
+[![Latest version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fgithub.com%2FCianusDev%2Fyouplay%2Freleases%2Flatest%2Fdownload%2Fversion.json&query=%24.versionName&label=version&prefix=v&color=FFD60A&labelColor=0F0E0B)](https://github.com/CianusDev/youplay/releases/latest)
 [![Downloads](https://img.shields.io/github/downloads/CianusDev/youplay/total?color=FFD60A&labelColor=0F0E0B)](https://github.com/CianusDev/youplay/releases)
 [![License: GPL v3](https://img.shields.io/github/license/CianusDev/youplay?color=FFD60A&labelColor=0F0E0B)](LICENSE)
 ![Platform: Android](https://img.shields.io/badge/platform-Android-FFD60A?labelColor=0F0E0B)
