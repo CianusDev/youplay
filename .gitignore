@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# App Android uniquement : dossiers de plateformes régénérés par Flutter, jamais versionnés.
+/ios/
+/linux/
+/macos/
+/windows/
+/web/
