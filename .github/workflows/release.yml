@@ -9,13 +9,16 @@ name: Release APK
 on:
   push:
     branches: [main]
-    # Le site (docs/), les README et la maquette ne changent pas l'app : pas de nouvelle release.
+    # Le site (docs/), les README, la maquette, les scripts et la CI ne changent pas l'app : pas de nouvelle release.
     paths-ignore:
       - 'docs/**'
       - '**.md'
       - 'LICENSE'
       - '.gitattributes'
       - 'sika-handoff/**'
+      # Scripts du dépôt et réglages de la CI : rien ne change dans l'app.
+      - 'tools/**'
+      - '.github/**'
   workflow_dispatch:
 
 permissions:
