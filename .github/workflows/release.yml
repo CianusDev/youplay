@@ -18,6 +18,10 @@ concurrency:
   group: release
   cancel-in-progress: true
 
+env:
+  # Empreinte (publique) du certificat qui signe YouPlay depuis la première version.
+  EXPECTED_CERT_SHA256: 104fae1ca60c5904feda9a30d272517d82b89b7b86fe36834f9580178fef5c55
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -45,8 +49,16 @@ jobs:
             echo "::error::Secret KEYSTORE_BASE64 manquant : impossible de signer l'APK avec la même clé."
             exit 1
           fi
-          mkdir -p ~/.android
-          echo "$KEYSTORE_BASE64" | base64 -d > ~/.android/debug.keystore
+          ks="$RUNNER_TEMP/youplay.keystore"
+          echo "$KEYSTORE_BASE64" | tr -d ' \r\n' | base64 -d > "$ks"
+          # La clé doit être exactement celle des APK déjà installés, sinon Android refuse la mise à jour.
+          got=$(LC_ALL=C keytool -J-Duser.language=en -list -v -keystore "$ks" -storepass android -alias androiddebugkey 2>/dev/null \
+            | grep -i 'SHA256:' | head -1 | sed 's/.*SHA256: *//' | tr -d ':' | tr 'A-F' 'a-f')
+          if [ "$got" != "$EXPECTED_CERT_SHA256" ]; then
+            echo "::error::Le secret KEYSTORE_BASE64 ne contient pas la bonne clé (empreinte '$got'). Recopie-le avec : base64 -w0 ~/.android/debug.keystore"
+            exit 1
+          fi
+          echo "YOUPLAY_KEYSTORE=$ks" >> "$GITHUB_ENV"
 
       - name: Numéro de version
         id: v
@@ -59,6 +71,14 @@ jobs:
 
       - name: Compilation
         run: flutter build apk --release --split-per-abi --build-number=${{ steps.v.outputs.code }} --build-name=${{ steps.v.outputs.name }}
+
+      - name: Vérification de la signature
+        run: |
+          apksigner="$ANDROID_HOME/build-tools/$(ls "$ANDROID_HOME/build-tools" | sort -V | tail -1)/apksigner"
+          for f in build/app/outputs/flutter-apk/app-*-release.apk; do
+            "$apksigner" verify --print-certs "$f" | grep -q "SHA-256 digest: $EXPECTED_CERT_SHA256" \
+              || { echo "::error::$f n'est pas signé avec la clé de YouPlay"; exit 1; }
+          done
 
       - name: Notes de version (titres des commits poussés)
         run: |

@@ -27,11 +27,22 @@ android {
         versionName = flutter.versionName
     }
 
+    // Clé de signature explicite, identique en local et sur GitHub Actions : une mise à jour
+    // signée avec une autre clé est refusée par Android (« package en conflit »).
+    // CI : YOUPLAY_KEYSTORE pointe vers la clé décodée du secret KEYSTORE_BASE64.
+    // Local : la clé de debug de la machine (~/.android/debug.keystore).
+    signingConfigs {
+        create("youplay") {
+            storeFile = file(System.getenv("YOUPLAY_KEYSTORE") ?: "${System.getProperty("user.home")}/.android/debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("youplay")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
