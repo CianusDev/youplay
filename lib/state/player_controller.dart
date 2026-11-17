@@ -131,6 +131,11 @@ class PlayerController extends Notifier<PlayerUi> {
       }))
       ..add(_p.currentIndexStream.listen((i) {
         if (i == null || i == state.index || i >= state.queue.length) return;
+        // Session restaurée sans préchargement : tant que la lecture n'a pas repris, le lecteur
+        // (encore inactif) annonce un index provisoire, souvent 0. Sans ce garde-fou, le
+        // mini-lecteur affichait le 1er titre de la playlist au lieu du titre en cours, et la
+        // session sauvegardée était écrasée avec ce mauvais titre.
+        if (_restoredPosition != null && !_p.playing) return;
         _flushListen();
         state = state.copyWith(index: i);
         ref.read(libraryProvider.notifier).recordPlay(state.queue[i]);
@@ -452,6 +457,7 @@ class PlayerController extends Notifier<PlayerUi> {
   }
 
   Future<void> next() async {
+    _restoredPosition = null; // changement de titre voulu : l'index annoncé fait foi
     if (_p.hasNext) {
       await _p.seekToNext();
     } else if (state.queue.isNotEmpty) {
@@ -460,6 +466,7 @@ class PlayerController extends Notifier<PlayerUi> {
   }
 
   Future<void> previous() async {
+    _restoredPosition = null;
     if (_p.position > const Duration(seconds: 3) || !_p.hasPrevious) {
       await _p.seek(Duration.zero);
     } else {
@@ -470,6 +477,7 @@ class PlayerController extends Notifier<PlayerUi> {
   Future<void> seek(Duration d) => _p.seek(d);
 
   Future<void> jumpTo(int index) async {
+    _restoredPosition = null;
     await _p.seek(Duration.zero, index: index);
     _p.play();
   }
