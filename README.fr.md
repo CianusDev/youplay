@@ -2,6 +2,14 @@
 
 [English](README.md) · [Site officiel](https://cianusdev.github.io/youplay/) · **[⬇ Télécharger la dernière version](https://github.com/CianusDev/youplay/releases/latest)**
 
+<p align="center">
+  <img src="docs/screenshots/home.jpg" width="19%" alt="Accueil">
+  <img src="docs/screenshots/player.jpg" width="19%" alt="Lecteur avec la ligne de paroles en cours">
+  <img src="docs/screenshots/lyrics.jpg" width="19%" alt="Paroles synchronisées">
+  <img src="docs/screenshots/library.jpg" width="19%" alt="Bibliothèque">
+  <img src="docs/screenshots/search.jpg" width="19%" alt="Recherche">
+</p>
+
 Lecteur de musique Android open source, façon Spotify, sans pub ni limite de sauts. Le catalogue vient de YouTube, via [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor).
 
 > YouPlay n'est ni affilié à YouTube ni à Google, ni approuvé par eux. L'app peut cesser de fonctionner quand YouTube change son fonctionnement interne : il faut alors mettre à jour NewPipeExtractor. Utilise-la à tes risques et respecte les droits des artistes.

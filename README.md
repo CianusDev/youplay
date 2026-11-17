@@ -19,14 +19,13 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 
 </div>
 
-<!-- Captures à ajouter dans docs/screenshots/ :
 <p align="center">
-  <img src="docs/screenshots/home.png" width="23%" alt="Home">
-  <img src="docs/screenshots/player.png" width="23%" alt="Player">
-  <img src="docs/screenshots/lyrics.png" width="23%" alt="Synced lyrics">
-  <img src="docs/screenshots/library.png" width="23%" alt="Library">
+  <img src="docs/screenshots/home.jpg" width="19%" alt="Home">
+  <img src="docs/screenshots/player.jpg" width="19%" alt="Player with the current lyric line">
+  <img src="docs/screenshots/lyrics.jpg" width="19%" alt="Synced lyrics">
+  <img src="docs/screenshots/library.jpg" width="19%" alt="Library">
+  <img src="docs/screenshots/search.jpg" width="19%" alt="Search">
 </p>
--->
 
 ## Features
 
