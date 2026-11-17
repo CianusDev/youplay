@@ -3,29 +3,26 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../data/app_update.dart';
 import '../../theme/sika_tokens.dart';
-import 'common.dart';
 
 const _skippedKey = 'youplay.update.skipped';
 
+enum UpdateCheck { upToDate, offered, failed }
+
 /// Cherche une mise à jour et propose de l'installer.
 /// Au démarrage ([manual] = false) : silencieux si rien de neuf ou version déjà refusée.
-/// Depuis les réglages ([manual] = true) : dit toujours ce qu'il en est.
-Future<void> checkForUpdate(BuildContext context, {bool manual = false}) async {
+/// Depuis les réglages ([manual] = true) : propose même une version refusée ; le résultat est
+/// renvoyé à l'appelant, qui l'affiche (un SnackBar serait caché sous la feuille des réglages).
+Future<UpdateCheck> checkForUpdate(BuildContext context, {bool manual = false}) async {
   AppRelease? r;
   try {
     r = await AppUpdater.checkNewer();
   } catch (_) {
-    if (manual && context.mounted) showSnack(context, 'Impossible de vérifier les mises à jour');
-    return;
+    return UpdateCheck.failed;
   }
-  if (!context.mounted) return;
-  if (r == null) {
-    if (manual) showSnack(context, 'YouPlay est à jour');
-    return;
-  }
+  if (r == null || !context.mounted) return UpdateCheck.upToDate;
   final prefs = await SharedPreferences.getInstance();
-  if (!manual && prefs.getInt(_skippedKey) == r.versionCode) return;
-  if (!context.mounted) return;
+  if (!manual && prefs.getInt(_skippedKey) == r.versionCode) return UpdateCheck.upToDate;
+  if (!context.mounted) return UpdateCheck.upToDate;
   final later = await showDialog<bool>(
     context: context,
     useRootNavigator: true,
@@ -34,6 +31,7 @@ Future<void> checkForUpdate(BuildContext context, {bool manual = false}) async {
   );
   // « Plus tard » : on ne redemande pas pour cette version, seulement pour la suivante.
   if (later == true) await prefs.setInt(_skippedKey, r.versionCode);
+  return UpdateCheck.offered;
 }
 
 class _UpdateDialog extends StatefulWidget {

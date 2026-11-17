@@ -87,22 +87,61 @@ class _Row extends StatelessWidget {
       );
 }
 
-/// Version installée + recherche manuelle d'une mise à jour.
-class _UpdateRow extends StatelessWidget {
+/// Version installée + recherche manuelle d'une mise à jour (résultat affiché dans la ligne).
+class _UpdateRow extends StatefulWidget {
   const _UpdateRow();
+  @override
+  State<_UpdateRow> createState() => _UpdateRowState();
+}
+
+class _UpdateRowState extends State<_UpdateRow> {
+  String? _version;
+  bool _checking = false;
+  UpdateCheck? _result;
 
   @override
-  Widget build(BuildContext context) => FutureBuilder<String>(
-        future: AppUpdater.currentVersionName(),
-        builder: (context, snap) => _Row(
-          title: 'Mises à jour',
-          subtitle: snap.hasData && snap.data!.isNotEmpty ? 'Version ${snap.data}' : 'Version installée',
-          trailing: TextButton(
-            onPressed: () => checkForUpdate(context, manual: true),
-            child: Text('Vérifier', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
-          ),
-        ),
-      );
+  void initState() {
+    super.initState();
+    AppUpdater.currentVersionName().then((v) {
+      if (mounted) setState(() => _version = v);
+    });
+  }
+
+  Future<void> _check() async {
+    setState(() {
+      _checking = true;
+      _result = null;
+    });
+    final r = await checkForUpdate(context, manual: true);
+    if (mounted) {
+      setState(() {
+        _checking = false;
+        _result = r;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final v = _version == null || _version!.isEmpty ? 'Version installée' : 'Version $_version';
+    return _Row(
+      title: 'Mises à jour',
+      subtitle: switch (_result) {
+        UpdateCheck.upToDate => '$v · à jour',
+        UpdateCheck.failed => 'Vérification impossible : vérifie ta connexion',
+        _ => v,
+      },
+      trailing: _checking
+          ? const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 18),
+              child: SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: SikaColors.yellow)),
+            )
+          : TextButton(
+              onPressed: _check,
+              child: Text('Vérifier', style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+            ),
+    );
+  }
 }
 
 /// MIUI / HyperOS coupe les apps en arrière-plan pour économiser la batterie, ce qui arrête la musique.

@@ -27,7 +27,10 @@ class AppUpdater {
   static Future<Map<String, dynamic>> _deviceInfo() async =>
       _info ??= Map<String, dynamic>.from(await _ch.invokeMethod<Map<Object?, Object?>>('info') ?? const {});
 
-  static Future<int> currentVersionCode() async => ((await _deviceInfo())['versionCode'] as num?)?.toInt() ?? 0;
+  /// Numéro de build installé. Un APK `--split-per-abi` ajoute l'ABI au versionCode
+  /// (armeabi-v7a 1000+n, arm64-v8a 2000+n, x86_64 4000+n) : on ne garde que n, le numéro
+  /// des tags `build-<n>`. Sans ça, la version 20 valait 2020 et aucune release ne semblait plus récente.
+  static Future<int> currentBuild() async => (((await _deviceInfo())['versionCode'] as num?)?.toInt() ?? 0) % 1000;
 
   static Future<String> currentVersionName() async => (await _deviceInfo())['versionName'] as String? ?? '';
 
@@ -41,7 +44,7 @@ class AppUpdater {
     if (res.statusCode != 200) return null;
     final j = jsonDecode(res.body) as Map<String, dynamic>;
     final code = int.tryParse((j['tag_name'] as String? ?? '').replaceFirst('build-', ''));
-    if (code == null || code <= await currentVersionCode()) return null;
+    if (code == null || code <= await currentBuild()) return null;
 
     // APK de l'architecture du téléphone (arm64-v8a sur presque tous les téléphones récents).
     final assets = (j['assets'] as List? ?? const []).cast<Map<String, dynamic>>();
