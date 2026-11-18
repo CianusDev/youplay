@@ -109,7 +109,6 @@ flutter test
 - **Android uniquement :** NewPipeExtractor est une librairie Java.
 - **Recherche :** la recherche YouTube Music de l'extracteur ne renvoie rien actuellement. L'app cherche donc parmi les vidéos YouTube et nettoie leurs titres.
 - **Paroles :** sur un clip avec une intro, elles peuvent être légèrement décalées, car le minutage vient de la version audio.
-- **Identifiant :** le nom affiché est YouPlay, mais l'identifiant Android reste `com.example.sika_app`. Le changer ferait perdre les données déjà sur le téléphone.
 
 ## Licence
 
