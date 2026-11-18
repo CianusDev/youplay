@@ -94,6 +94,19 @@ class YoutubeSource {
     return (p, items);
   }
 
+  /// Playlist YouTube complète, pour l'importer dans la bibliothèque (doublons retirés).
+  Future<ImportedPlaylist> importPlaylist(String url, {int max = importMax}) async {
+    final m = (await _ch.invokeMapMethod<String, dynamic>('playlistAll', {'url': url, 'max': max}))!;
+    final seen = <String>{};
+    final tracks = [
+      for (final t in (m['items'] as List).cast<Map>().map((e) => e.cast<String, dynamic>()).where((e) => e['type'] == 'stream').map(_track))
+        if (seen.add(t.id)) t,
+    ];
+    return ImportedPlaylist(name: (m['name'] as String? ?? '').trim(), tracks: tracks, truncated: m['truncated'] == true);
+  }
+
+  static const importMax = 1000;
+
   Future<ResolvedStream> resolve(String trackId, {bool force = false}) async {
     final c = _cache[trackId];
     if (!force && c != null && c.fresh) return c;
@@ -218,4 +231,27 @@ class YoutubeAudioSource extends StreamAudioSource {
       }
     }
   }
+}
+
+class ImportedPlaylist {
+  const ImportedPlaylist({required this.name, required this.tracks, required this.truncated});
+  final String name;
+  final List<Track> tracks;
+
+  /// Plus de [YoutubeSource.importMax] titres : seuls les premiers sont importés.
+  final bool truncated;
+}
+
+/// Lien de playlist YouTube canonique, ou null si le texte n'en contient pas.
+/// Accepte youtube.com/playlist?list=…, music.youtube.com, youtu.be/…?list=…, watch?v=…&list=…,
+/// et un lien au milieu d'un texte partagé.
+String? youtubePlaylistUrl(String input) {
+  final match = RegExp(r'https?://\S+').firstMatch(input.trim());
+  final uri = Uri.tryParse(match?.group(0) ?? input.trim());
+  if (uri == null) return null;
+  final host = uri.host.toLowerCase();
+  final youtube = host == 'youtu.be' || host == 'youtube.com' || host.endsWith('.youtube.com');
+  final id = uri.queryParameters['list'];
+  if (!youtube || id == null || !RegExp(r'^[A-Za-z0-9_-]{10,}$').hasMatch(id)) return null;
+  return 'https://www.youtube.com/playlist?list=$id';
 }

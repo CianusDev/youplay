@@ -2089,6 +2089,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'At startup, on GitHub'**
   String get updateAutoSub;
+
+  /// No description provided for @importPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from YouTube'**
+  String get importPlaylist;
+
+  /// No description provided for @importPlaylistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Import a YouTube playlist'**
+  String get importPlaylistTitle;
+
+  /// No description provided for @importPlaylistHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist link'**
+  String get importPlaylistHint;
+
+  /// No description provided for @importPlaylistInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This link isn\'t a YouTube playlist'**
+  String get importPlaylistInvalid;
+
+  /// No description provided for @importPlaylistLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading the playlist…'**
+  String get importPlaylistLoading;
+
+  /// No description provided for @importPlaylistFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t read this playlist. It may be private or deleted.'**
+  String get importPlaylistFailed;
+
+  /// No description provided for @importPlaylistEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'This playlist has no playable songs'**
+  String get importPlaylistEmpty;
+
+  /// No description provided for @importPlaylistBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song. It will also be downloaded to your phone, in Music/YouPlay.} other{{count} songs. They will also be downloaded to your phone, in Music/YouPlay.}}'**
+  String importPlaylistBody(int count);
+
+  /// No description provided for @importPlaylistTruncated.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the first {max} songs are imported.'**
+  String importPlaylistTruncated(int max);
+
+  /// No description provided for @importAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Import'**
+  String get importAction;
 }
 
 class _AppLocalizationsDelegate

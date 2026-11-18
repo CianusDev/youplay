@@ -331,5 +331,15 @@
   "updateAutoEnable": "Activer",
   "noThanks": "Non merci",
   "updateAuto": "Vérifier automatiquement",
-  "updateAutoSub": "Au démarrage, sur GitHub"
+  "updateAutoSub": "Au démarrage, sur GitHub",
+  "importPlaylist": "Importer depuis YouTube",
+  "importPlaylistTitle": "Importer une playlist YouTube",
+  "importPlaylistHint": "Lien de la playlist",
+  "importPlaylistInvalid": "Ce lien n'est pas une playlist YouTube",
+  "importPlaylistLoading": "Lecture de la playlist…",
+  "importPlaylistFailed": "Impossible de lire cette playlist. Elle est peut-être privée ou supprimée.",
+  "importPlaylistEmpty": "Cette playlist ne contient aucun titre lisible",
+  "importPlaylistBody": "{count, plural, =1{1 titre. Il sera aussi téléchargé sur ton téléphone, dans Music/YouPlay.} other{{count} titres. Ils seront aussi téléchargés sur ton téléphone, dans Music/YouPlay.}}",
+  "importPlaylistTruncated": "Seuls les {max} premiers titres sont importés.",
+  "importAction": "Importer"
 }

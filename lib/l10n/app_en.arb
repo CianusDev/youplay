@@ -646,5 +646,29 @@
   "updateAutoEnable": "Turn on",
   "noThanks": "No thanks",
   "updateAuto": "Check automatically",
-  "updateAutoSub": "At startup, on GitHub"
+  "updateAutoSub": "At startup, on GitHub",
+  "importPlaylist": "Import from YouTube",
+  "importPlaylistTitle": "Import a YouTube playlist",
+  "importPlaylistHint": "Playlist link",
+  "importPlaylistInvalid": "This link isn't a YouTube playlist",
+  "importPlaylistLoading": "Reading the playlist…",
+  "importPlaylistFailed": "Couldn't read this playlist. It may be private or deleted.",
+  "importPlaylistEmpty": "This playlist has no playable songs",
+  "importPlaylistBody": "{count, plural, =1{1 song. It will also be downloaded to your phone, in Music/YouPlay.} other{{count} songs. They will also be downloaded to your phone, in Music/YouPlay.}}",
+  "@importPlaylistBody": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importPlaylistTruncated": "Only the first {max} songs are imported.",
+  "@importPlaylistTruncated": {
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "importAction": "Import"
 }

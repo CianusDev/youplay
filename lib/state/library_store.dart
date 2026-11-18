@@ -263,6 +263,13 @@ class LibraryStore extends Notifier<LibraryState> {
     ));
   }
 
+  /// Nouvelle playlist déjà remplie (import) : une seule écriture au lieu d'une par titre.
+  MyPlaylist createPlaylistWith(String name, List<Track> tracks) {
+    final p = createPlaylist(name).copyWith(tracks: tracks);
+    _set(state.copyWith(myPlaylists: [for (final x in state.myPlaylists) if (x.id == p.id) p else x]));
+    return p;
+  }
+
   void removeFromPlaylist(String playlistId, String trackId) {
     _set(state.copyWith(myPlaylists: [
       for (final p in state.myPlaylists)

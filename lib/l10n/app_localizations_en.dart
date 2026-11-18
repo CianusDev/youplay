@@ -1154,4 +1154,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get updateAutoSub => 'At startup, on GitHub';
+
+  @override
+  String get importPlaylist => 'Import from YouTube';
+
+  @override
+  String get importPlaylistTitle => 'Import a YouTube playlist';
+
+  @override
+  String get importPlaylistHint => 'Playlist link';
+
+  @override
+  String get importPlaylistInvalid => 'This link isn\'t a YouTube playlist';
+
+  @override
+  String get importPlaylistLoading => 'Reading the playlist…';
+
+  @override
+  String get importPlaylistFailed =>
+      'Couldn\'t read this playlist. It may be private or deleted.';
+
+  @override
+  String get importPlaylistEmpty => 'This playlist has no playable songs';
+
+  @override
+  String importPlaylistBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count songs. They will also be downloaded to your phone, in Music/YouPlay.',
+      one:
+          '1 song. It will also be downloaded to your phone, in Music/YouPlay.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importPlaylistTruncated(int max) {
+    return 'Only the first $max songs are imported.';
+  }
+
+  @override
+  String get importAction => 'Import';
 }

@@ -100,6 +100,7 @@ object NewPipeBridge {
         "searchVideos" -> search(call.argument<String>("query")!!, YoutubeSearchQueryHandlerFactory.VIDEOS)
         "searchAlbums" -> searchAlbums(call.argument<String>("query")!!)
         "playlist" -> playlist(call.argument<String>("url")!!)
+        "playlistAll" -> playlistAll(call.argument<String>("url")!!, call.argument<Int>("max") ?: 1000)
         "audioStream" -> audioStream(call.argument<String>("id")!!)
         "related" -> related(call.argument<String>("id")!!)
         else -> throw NotImplementedError()
@@ -264,6 +265,25 @@ object NewPipeBridge {
             "uploader" to info.uploaderName,
             "thumbnail" to best(info.thumbnails),
             "items" to info.relatedItems.mapNotNull(::item),
+        )
+    }
+
+    /** Playlist complète (YouTube la sert par pages de ~100 titres), limitée à [max] titres. */
+    private fun playlistAll(url: String, max: Int): Map<String, Any?> {
+        val info = PlaylistInfo.getInfo(yt, url)
+        val items = info.relatedItems.toMutableList<InfoItem>()
+        var page = info.nextPage
+        while (page != null && items.size < max) {
+            val more = PlaylistInfo.getMoreItems(yt, url, page)
+            items += more.items
+            page = more.nextPage
+        }
+        return mapOf(
+            "name" to info.name,
+            "uploader" to info.uploaderName,
+            "thumbnail" to best(info.thumbnails),
+            "items" to items.take(max).mapNotNull(::item),
+            "truncated" to (page != null || items.size > max),
         )
     }
 

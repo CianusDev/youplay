@@ -8,6 +8,7 @@ import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
 import '../components/cover_art.dart';
+import '../components/playlist_import.dart';
 import '../components/rows.dart';
 import '../components/sika_chip.dart';
 import '../components/sika_icon.dart';
@@ -152,7 +153,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                       if (!_filtering) _filter = '';
                     }),
                   ),
-                  IconButtonSika(icon: 'plus', label: context.l10n.createPlaylist, onTap: _create),
+                  IconButtonSika(icon: 'plus', label: context.l10n.createPlaylist, onTap: _addMenu),
                 ],
               ),
             ),
@@ -266,6 +267,32 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         ],
       ),
     );
+  }
+
+  /// « + » : nouvelle playlist vide, ou import d'une playlist YouTube.
+  void _addMenu() {
+    final l = context.l10n;
+    showSikaSheet(context, (ctx) => SafeArea(
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            SheetAction(
+              icon: 'plus',
+              label: l.newPlaylist,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                _create();
+              },
+            ),
+            SheetAction(
+              icon: 'download-circle',
+              label: l.importPlaylist,
+              onTap: () {
+                Navigator.of(ctx).pop();
+                importYoutubePlaylist(context, ref);
+              },
+            ),
+            const SizedBox(height: 8),
+          ]),
+        ));
   }
 
   Future<void> _create() async {
