@@ -31,7 +31,8 @@ Lecteur de musique Android open source, façon Spotify, sans pub ni limite de sa
 - **Bibliothèque :** titres likés, playlists perso, artistes et albums ajoutés, et les statistiques « Ton mois en musique ».
 - **Reprise de lecture :** au redémarrage, l'app retrouve le dernier titre, sa position et la file d'attente.
 - **Minuteur de sommeil :** de 5 à 60 minutes, ou à la fin du titre en cours.
-- **Mises à jour automatiques :** chaque push sur `main` publie une release, et l'app propose de l'installer.
+- **Sauvegarde :** exporte ta bibliothèque dans un fichier et restaure-la sur un autre téléphone.
+- **Mises à jour :** chaque push sur `main` publie une release. Si tu l'acceptes au premier lancement, l'app vérifie au démarrage et propose de l'installer.
 
 Toutes les données restent sur le téléphone, sans compte ni serveur.
 

@@ -36,7 +36,8 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 - **Library**: liked songs, your own playlists, saved artists and albums, monthly listening stats.
 - **Sleep timer**: 5 to 60 minutes, or at the end of the current song.
 - **Endless radio** from the last song you played.
-- **Automatic updates**: every new version is offered inside the app.
+- **Backup**: export your library to a file and restore it on another phone.
+- **Updates**: if you allow it on first launch, new versions are offered inside the app.
 - **English and French**: follows your phone's language, or pick one in Settings.
 - **Private**: no account, no server, everything stays on your phone.
 
@@ -44,7 +45,7 @@ No ads, no skip limits, background & offline playback, synced lyrics.
 
 1. Download [**YouPlay.apk**](https://github.com/CianusDev/youplay/releases/latest/download/YouPlay.apk) on your phone (older 32-bit phones: `app-armeabi-v7a-release.apk` from the [latest release](https://github.com/CianusDev/youplay/releases/latest)).
 2. Open it and allow your browser or file manager to install apps.
-3. That's it: new versions are offered in the app (Settings › Updates › Check).
+3. That's it: new versions are offered in the app if you allow it (Settings › Check automatically, or Updates › Check).
 
 You can also track releases with [Obtainium](https://github.com/ImranR98/Obtainium) using this repository's URL.
 

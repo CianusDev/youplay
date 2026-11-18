@@ -61,6 +61,7 @@ class _SettingsSheet extends ConsumerWidget {
             const _LanguageRow(),
             if (DownloadManager.supported) const _BackupRow(),
             if (DownloadManager.supported) const _BackgroundPlaybackRow(),
+            if (DownloadManager.supported) const _AutoUpdateRow(),
             if (DownloadManager.supported) const _UpdateRow(),
             const SizedBox(height: 16),
             Container(
@@ -290,24 +291,16 @@ class _BackupRowState extends State<_BackupRow> {
     if (!mounted || !await confirmAction(context, l.restoreTitle, l.restoreBody, l.restoreAction)) return;
     // Sans « Musique et audio », les sons déjà sur le téléphone paraîtraient absents et seraient oubliés.
     await MediaStorage.ensurePermission();
-    await LibraryBackup.restore(await SharedPreferences.getInstance(), data);
+    final prefs = await SharedPreferences.getInstance();
+    await LibraryBackup.restore(prefs, data);
+    await markRestored(prefs); // au redémarrage : reprise des sons de l'ancienne app
     await LibraryBackup.restart();
-  }
-
-  Future<void> _transfer() async {
-    final i = _info!;
-    if (i.isLegacy) {
-      final prefs = await SharedPreferences.getInstance();
-      if (await LibraryBackup.send(prefs)) await prefs.setBool('youplay.migrate.sent', true);
-    } else {
-      await LibraryBackup.requestFromOther();
-    }
   }
 
   @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final transfer = _info != null && _info!.otherReady;
+    final legacy = _info?.legacyInstalled == true;
     return _Row(
       title: l.backupTitle,
       subtitle: _message ?? l.backupSub,
@@ -326,18 +319,55 @@ class _BackupRowState extends State<_BackupRow> {
               ),
               SheetAction(icon: 'share', label: l.backupExport, onTap: () => run(_export)),
               SheetAction(icon: 'download-circle', label: l.backupRestore, onTap: () => run(_restore)),
-              if (transfer)
+              // L'ancienne YouPlay est encore là : y exporter la bibliothèque, puis la restaurer ici.
+              if (legacy)
                 SheetAction(
                   icon: 'chevron-right',
-                  label: _info!.isLegacy ? l.migrateSendAction : l.migrateFetchAction,
+                  label: l.migrateOpenLegacyAction,
                   color: SikaColors.yellow,
-                  onTap: () => run(_transfer),
+                  onTap: () => run(LibraryBackup.openLegacy),
                 ),
               const SizedBox(height: 8),
             ]),
           );
         }),
         child: Text(l.backupManage, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+      ),
+    );
+  }
+}
+
+/// Recherche de mise à jour au démarrage (sur GitHub) : activée seulement par l'utilisateur.
+class _AutoUpdateRow extends StatefulWidget {
+  const _AutoUpdateRow();
+  @override
+  State<_AutoUpdateRow> createState() => _AutoUpdateRowState();
+}
+
+class _AutoUpdateRowState extends State<_AutoUpdateRow> {
+  bool _on = false;
+
+  @override
+  void initState() {
+    super.initState();
+    SharedPreferences.getInstance().then((p) {
+      if (mounted) setState(() => _on = p.getBool(autoUpdateKey) ?? false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = context.l10n;
+    return _Row(
+      title: l.updateAuto,
+      subtitle: l.updateAutoSub,
+      trailing: SikaSwitch(
+        value: _on,
+        label: l.updateAuto,
+        onChanged: (v) async {
+          setState(() => _on = v);
+          await (await SharedPreferences.getInstance()).setBool(autoUpdateKey, v);
+        },
       ),
     );
   }

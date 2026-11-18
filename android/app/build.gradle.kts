@@ -1,8 +1,19 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+val keyProperties = Properties().apply {
+    val f = rootProject.file("key.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+fun signingValue(name: String, env: String): String? = System.getenv(env) ?: keyProperties.getProperty(name)
+
+val releaseStore: String? = signingValue("storeFile", "YOUPLAY_KEYSTORE")
 
 android {
     namespace = "com.example.sika_app"
@@ -28,22 +39,30 @@ android {
         versionName = flutter.versionName
     }
 
-    // Clé de signature explicite, identique en local et sur GitHub Actions : une mise à jour
-    // signée avec une autre clé est refusée par Android (« package en conflit »).
-    // CI : YOUPLAY_KEYSTORE pointe vers la clé décodée du secret KEYSTORE_BASE64.
-    // Local : la clé de debug de la machine (~/.android/debug.keystore).
+    // Clé de release YouPlay (pas la clé de debug : IzzyOnDroid refuse les APK signés en debug).
+    // Une mise à jour signée avec une autre clé est refusée par Android (« package en conflit »).
+    // CI : variables YOUPLAY_KEYSTORE / YOUPLAY_KEYSTORE_PASSWORD (secrets KEYSTORE_BASE64, KEYSTORE_PASSWORD).
+    // Local : android/key.properties (storeFile, password, keyAlias), jamais commité.
+    // Sans clé (contributeurs) : build release signé avec la clé de debug de la machine.
     signingConfigs {
         create("youplay") {
-            storeFile = file(System.getenv("YOUPLAY_KEYSTORE") ?: "${System.getProperty("user.home")}/.android/debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+            storeFile = releaseStore?.let { file(it) }
+            storePassword = signingValue("password", "YOUPLAY_KEYSTORE_PASSWORD")
+            keyAlias = signingValue("keyAlias", "YOUPLAY_KEY_ALIAS") ?: "youplay"
+            keyPassword = storePassword
         }
+    }
+
+    // Le bloc « dependency info » d'AGP est chiffré avec une clé Google, illisible pour les
+    // catalogues d'apps libres (IzzyOnDroid, F-Droid) : on ne l'ajoute pas.
+    dependenciesInfo {
+        includeInApk = false
+        includeInBundle = false
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("youplay")
+            signingConfig = signingConfigs.getByName(if (releaseStore != null) "youplay" else "debug")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }

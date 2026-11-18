@@ -1988,42 +1988,6 @@ abstract class AppLocalizations {
   /// **'Restore'**
   String get restoreAction;
 
-  /// No description provided for @migrateSendAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Transfer to the new YouPlay'**
-  String get migrateSendAction;
-
-  /// No description provided for @migrateFetchAction.
-  ///
-  /// In en, this message translates to:
-  /// **'Get library from the old YouPlay'**
-  String get migrateFetchAction;
-
-  /// No description provided for @migrateTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'YouPlay has moved'**
-  String get migrateTitle;
-
-  /// No description provided for @migrateLegacyBody.
-  ///
-  /// In en, this message translates to:
-  /// **'The new YouPlay is installed. Transfer your library to it: likes, playlists, history and downloaded songs.'**
-  String get migrateLegacyBody;
-
-  /// No description provided for @migrateTransfer.
-  ///
-  /// In en, this message translates to:
-  /// **'Transfer'**
-  String get migrateTransfer;
-
-  /// No description provided for @migrateLegacyDoneBody.
-  ///
-  /// In en, this message translates to:
-  /// **'Your library is in the new YouPlay. This old version won\'t get updates anymore: you can uninstall it.'**
-  String get migrateLegacyDoneBody;
-
   /// No description provided for @migrateUninstall.
   ///
   /// In en, this message translates to:
@@ -2039,14 +2003,8 @@ abstract class AppLocalizations {
   /// No description provided for @migrateNewBody.
   ///
   /// In en, this message translates to:
-  /// **'The old YouPlay is on this phone. Bring over its library: likes, playlists, history and downloaded songs?'**
+  /// **'The old YouPlay is still on this phone. To bring over your library: open it, go to Settings › Backup › Export to a file, then come back here: Settings › Backup › Restore.'**
   String get migrateNewBody;
-
-  /// No description provided for @migrateFetch.
-  ///
-  /// In en, this message translates to:
-  /// **'Bring it over'**
-  String get migrateFetch;
 
   /// No description provided for @adoptTitle.
   ///
@@ -2057,7 +2015,7 @@ abstract class AppLocalizations {
   /// No description provided for @adoptBody.
   ///
   /// In en, this message translates to:
-  /// **'Android still treats them as the old YouPlay\'s. To organise and delete them, the new one will copy them: Android will ask you to allow deleting the original files.'**
+  /// **'They were downloaded by another YouPlay install, so Android keeps them read-only. To organise and delete them, YouPlay will copy them, and Android will ask you to allow deleting the original files.'**
   String get adoptBody;
 
   /// No description provided for @adoptAction.
@@ -2083,6 +2041,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This version installs next to the old one (new app ID, for free-software app stores). Your library is transferred right after.'**
   String get updateNewAppNote;
+
+  /// No description provided for @migrateOpenLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Open old app'**
+  String get migrateOpenLegacy;
+
+  /// No description provided for @migrateOpenLegacyAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the old YouPlay to export'**
+  String get migrateOpenLegacyAction;
+
+  /// No description provided for @updateAutoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Updates'**
+  String get updateAutoTitle;
+
+  /// No description provided for @updateAutoBody.
+  ///
+  /// In en, this message translates to:
+  /// **'YouPlay can check GitHub for a new version at startup and offer it to you. You can change your mind in settings.'**
+  String get updateAutoBody;
+
+  /// No description provided for @updateAutoEnable.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on'**
+  String get updateAutoEnable;
+
+  /// No description provided for @noThanks.
+  ///
+  /// In en, this message translates to:
+  /// **'No thanks'**
+  String get noThanks;
+
+  /// No description provided for @updateAuto.
+  ///
+  /// In en, this message translates to:
+  /// **'Check automatically'**
+  String get updateAuto;
+
+  /// No description provided for @updateAutoSub.
+  ///
+  /// In en, this message translates to:
+  /// **'At startup, on GitHub'**
+  String get updateAutoSub;
 }
 
 class _AppLocalizationsDelegate

@@ -1,0 +1,18 @@
+YouPlay est un lecteur de musique open source basé sur YouTube : sans pub, sans compte et sans limite de passage.
+
+<b>Fonctionnalités</b>
+<ul>
+<li>Écoute gratuite depuis YouTube (via NewPipeExtractor), sans compte Google</li>
+<li>Un lecteur pensé pour la musique : barre en forme d'onde, aléatoire, répétition, file d'attente, glisser pour changer de titre</li>
+<li>Paroles synchronisées (LRCLIB) : touche une ligne pour y aller, partage les paroles en image</li>
+<li>Lecture en arrière-plan avec contrôles dans la notification et sur l'écran de verrouillage</li>
+<li>Téléchargements hors ligne en simples fichiers dans Music/YouPlay, un dossier par playlist</li>
+<li>Bibliothèque : titres likés, tes playlists, artistes et albums enregistrés, statistiques d'écoute</li>
+<li>Minuteur de sommeil, radio infinie à partir du dernier titre écouté</li>
+<li>Sauvegarde et restauration de ta bibliothèque dans un fichier</li>
+<li>Français et anglais</li>
+</ul>
+
+<b>Privé</b> : pas de compte, pas de serveur, pas de pistage. Tout reste sur ton téléphone.
+
+YouPlay s'appuie sur YouTube, un service réseau non libre.

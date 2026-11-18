@@ -5,8 +5,8 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Sauvegarde de la bibliothèque (likes, playlists, historique, téléchargements, réglages) dans un
-/// fichier JSON, et déménagement de l'ancienne app `com.example.sika_app` vers
-/// `io.github.cianusdev.youplay` (voir `LibraryTransfer.kt`).
+/// fichier JSON : sert aussi à passer de l'ancienne app `com.example.sika_app` à
+/// `io.github.cianusdev.youplay` (clés différentes, voir `LibraryTransfer.kt`).
 class LibraryBackup {
   static const _ch = MethodChannel('youplay/backup');
 
@@ -49,8 +49,7 @@ class LibraryBackup {
 
   /// Remplace la bibliothèque. Les sons dont le fichier n'est plus sur le téléphone (sauvegarde
   /// venue d'un autre appareil) sont retirés : ceux des playlists se retéléchargent tout seuls.
-  /// [checkFiles] = false pour le déménagement : mêmes fichiers, même téléphone (et sans la
-  /// permission « Musique et audio », ceux de l'ancienne app paraîtraient absents).
+  /// Demander « Musique et audio » avant : sans elle, les sons d'une autre app paraissent absents.
   static Future<void> restore(SharedPreferences prefs, Map<String, String> data, {bool checkFiles = true}) async {
     for (final k in keys) {
       var v = data[k];
@@ -108,50 +107,36 @@ class LibraryBackup {
   /// Relance l'app pour recharger la bibliothèque restaurée.
   static Future<void> restart() => _ch.invokeMethod<void>('restart');
 
-  // --- Déménagement entre l'ancienne et la nouvelle app ---
+  // --- Passage de l'ancienne app (com.example.sika_app) à la nouvelle ---
 
   static Future<MigrationInfo> info() async {
     final m = (await _ch.invokeMethod<Map<Object?, Object?>>('info') ?? const {}).cast<String, Object?>();
     return MigrationInfo(
       packageName: m['packageName'] as String? ?? '',
-      isLegacy: m['isLegacy'] == true,
-      isNew: m['isNew'] == true,
-      otherReady: m['otherReady'] == true,
+      legacyInstalled: m['legacyInstalled'] == true,
       sdk: (m['sdk'] as num?)?.toInt() ?? 0,
     );
   }
 
-  /// Nouvelle app : bibliothèque reçue de l'ancienne (une seule fois).
-  static Future<String?> takeImport() => _ch.invokeMethod<String>('takeImport');
-
-  /// Ancienne app : la nouvelle vient de demander la bibliothèque.
-  static Future<bool> takeRequest() async => await _ch.invokeMethod<bool>('takeRequest') ?? false;
-
-  /// Ancienne app : envoie la bibliothèque et ouvre la nouvelle.
-  static Future<bool> send(SharedPreferences prefs) async => await _ch.invokeMethod<bool>('send', {'content': export(prefs)}) ?? false;
-
-  /// Nouvelle app : ouvre l'ancienne pour qu'elle envoie sa bibliothèque.
-  static Future<bool> requestFromOther() async => await _ch.invokeMethod<bool>('request') ?? false;
+  /// Ouvre l'ancienne YouPlay (pour y exporter la bibliothèque).
+  static Future<bool> openLegacy() async => await _ch.invokeMethod<bool>('openLegacy') ?? false;
 
   /// Ouvre la désinstallation de l'ancienne app (Android demande confirmation).
   static Future<bool> uninstallLegacy() async => await _ch.invokeMethod<bool>('uninstallLegacy') ?? false;
 
-  /// Reprend les sons téléchargés par l'ancienne app (copie + confirmation Android).
-  /// Retourne le nombre de sons repris, -1 si l'utilisateur a refusé.
+  /// Nombre de sons téléchargés qui appartiennent à une autre app (lecture seule pour nous).
+  static Future<int> foreignCount(List<String> paths) async => await _ch.invokeMethod<int>('foreign', {'paths': paths}) ?? 0;
+
+  /// Reprend les sons téléchargés par une autre app (ancienne YouPlay, ou YouPlay réinstallée) :
+  /// copie + confirmation Android. Retourne le nombre de sons repris, -1 si l'utilisateur a refusé.
   static Future<int> adopt(List<String> paths) async => await _ch.invokeMethod<int>('adopt', {'paths': paths}) ?? 0;
 }
 
 class MigrationInfo {
-  const MigrationInfo({required this.packageName, required this.isLegacy, required this.isNew, required this.otherReady, required this.sdk});
+  const MigrationInfo({required this.packageName, required this.legacyInstalled, required this.sdk});
   final String packageName;
 
-  /// Ancienne app `com.example.sika_app`.
-  final bool isLegacy;
-
-  /// Nouvelle app `io.github.cianusdev.youplay`.
-  final bool isNew;
-
-  /// L'autre YouPlay est installée, signée par la même clé, et sait faire le transfert.
-  final bool otherReady;
+  /// L'ancienne YouPlay (`com.example.sika_app`, notre certificat) est encore installée.
+  final bool legacyInstalled;
   final int sdk;
 }

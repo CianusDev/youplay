@@ -2,6 +2,4 @@
 <!-- Dossier des APK de mise à jour (cache de l'app), lisible par l'installateur via FileProvider. -->
 <paths>
     <cache-path name="updates" path="updates/"/>
-    <!-- Bibliothèque envoyée à la nouvelle YouPlay (déménagement de l'identifiant) -->
-    <cache-path name="transfer" path="transfer/"/>
 </paths>

@@ -53,7 +53,7 @@ Future<void> main() async {
   if (!kIsWeb && Platform.isAndroid) _scheduleStartupChecks();
 }
 
-/// Déménagement vers le nouvel identifiant, sinon mise à jour publiée sur GitHub :
+/// Passage depuis l'ancienne YouPlay, sinon mise à jour publiée sur GitHub :
 /// proposés une fois l'écran d'accueil affiché.
 void _scheduleStartupChecks() {
   BuildContext? overlay() => rootNavigatorKey.currentState?.overlay?.context;
@@ -61,13 +61,11 @@ void _scheduleStartupChecks() {
   Future.delayed(const Duration(seconds: 4), () async {
     final ctx = overlay();
     if (ctx == null || !ctx.mounted || await runMigration(ctx)) return;
+    // Recherche sur GitHub seulement si l'utilisateur l'a acceptée (demandé une fois).
     final again = overlay();
-    if (again != null && again.mounted) checkForUpdate(again);
-  });
-  // Retour dans l'app : l'autre YouPlay vient peut-être d'envoyer ou de demander la bibliothèque.
-  AppLifecycleListener(onResume: () {
-    final ctx = overlay();
-    if (ctx != null && ctx.mounted) runMigration(ctx, resumed: true);
+    if (again == null || !again.mounted || !await autoUpdateAllowed(again)) return;
+    final last = overlay();
+    if (last != null && last.mounted) checkForUpdate(last);
   });
 }
 

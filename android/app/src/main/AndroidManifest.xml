@@ -10,7 +10,7 @@
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO"/>
     <!-- Mises à jour : ouvrir l'installateur avec l'APK téléchargé depuis les releases GitHub -->
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
-    <!-- Déménagement vers le nouvel identifiant : proposer de désinstaller l'ancienne YouPlay -->
+    <!-- Nouvel identifiant : proposer de désinstaller l'ancienne YouPlay (com.example.sika_app) -->
     <uses-permission android:name="android.permission.REQUEST_DELETE_PACKAGES"/>
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29"/>
@@ -41,11 +41,6 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
-            <!-- Bibliothèque envoyée par l'ancienne YouPlay (vérifiée : même signature) -->
-            <intent-filter>
-                <action android:name="io.github.cianusdev.youplay.IMPORT_LIBRARY"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-            </intent-filter>
         </activity>
         <!-- Lecture en arrière-plan (just_audio_background / audio_service) -->
         <service
@@ -73,8 +68,6 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/update_paths"/>
         </provider>
-        <!-- Cette version sait transférer la bibliothèque entre l'ancienne et la nouvelle app -->
-        <meta-data android:name="youplay.transfer" android:value="1"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -87,9 +80,8 @@
 
          In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
     <queries>
-        <!-- Ancienne (com.example.sika_app) et nouvelle YouPlay : transfert de la bibliothèque -->
+        <!-- Ancienne YouPlay : la repérer pour guider le passage à la nouvelle -->
         <package android:name="com.example.sika_app"/>
-        <package android:name="io.github.cianusdev.youplay"/>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

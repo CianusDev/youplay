@@ -1,0 +1,18 @@
+YouPlay is an open-source music player built on YouTube, with no ads, no account and no skip limits.
+
+<b>Features</b>
+<ul>
+<li>Free streaming from YouTube (through NewPipeExtractor), no Google account needed</li>
+<li>A player made for music: waveform seek bar, shuffle, repeat, queue, swipe to change track</li>
+<li>Synced lyrics from LRCLIB: tap a line to jump to it, share lyrics as an image</li>
+<li>Background playback with notification and lock-screen controls</li>
+<li>Offline downloads as plain files in Music/YouPlay, one folder per playlist</li>
+<li>Library: liked songs, your own playlists, saved artists and albums, listening stats</li>
+<li>Sleep timer, endless radio from the last song you played</li>
+<li>Backup and restore your library to a file</li>
+<li>English and French</li>
+</ul>
+
+<b>Private</b>: no account, no server, no tracking. Everything stays on your phone.
+
+YouPlay relies on YouTube, a non-free network service.

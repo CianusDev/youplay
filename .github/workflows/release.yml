@@ -1,8 +1,9 @@
 # Chaque push sur main : compile l'APK et le publie en release GitHub.
 # L'app installée compare son versionCode au tag `build-<n>` et propose la mise à jour.
 #
-# Secret requis (Settings › Secrets and variables › Actions) :
-#   KEYSTORE_BASE64 : la clé qui signe l'app (`base64 -w0 ~/.android/debug.keystore`).
+# Secrets requis (Settings › Secrets and variables › Actions) :
+#   KEYSTORE_BASE64   : la clé de release (`base64 -w0 ~/.android/youplay-release.jks`).
+#   KEYSTORE_PASSWORD : son mot de passe (android/key.properties, ligne password).
 #   Sans la même clé, Android refuse d'installer la mise à jour par-dessus l'app existante.
 name: Release APK
 
@@ -18,6 +19,7 @@ on:
       - 'sika-handoff/**'
       # Scripts du dépôt et réglages de la CI : rien ne change dans l'app.
       - 'tools/**'
+      - 'fastlane/**'
       - '.github/**'
   workflow_dispatch:
 
@@ -29,8 +31,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Empreinte (publique) du certificat qui signe YouPlay depuis la première version.
-  EXPECTED_CERT_SHA256: 104fae1ca60c5904feda9a30d272517d82b89b7b86fe36834f9580178fef5c55
+  # Empreinte (publique) du certificat de release de YouPlay (io.github.cianusdev.youplay).
+  EXPECTED_CERT_SHA256: df8cbe0c6b83a0faa75b23c9f3efc24cbc840c3d978bd7e068a9ca07df607861
 
 jobs:
   release:
@@ -54,21 +56,23 @@ jobs:
       - name: Clé de signature
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
         run: |
-          if [ -z "$KEYSTORE_BASE64" ]; then
-            echo "::error::Secret KEYSTORE_BASE64 manquant : impossible de signer l'APK avec la même clé."
+          if [ -z "$KEYSTORE_BASE64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::Secrets KEYSTORE_BASE64 / KEYSTORE_PASSWORD manquants : impossible de signer l'APK avec la même clé."
             exit 1
           fi
           ks="$RUNNER_TEMP/youplay.keystore"
           echo "$KEYSTORE_BASE64" | tr -d ' \r\n' | base64 -d > "$ks"
           # La clé doit être exactement celle des APK déjà installés, sinon Android refuse la mise à jour.
-          got=$(LC_ALL=C keytool -J-Duser.language=en -list -v -keystore "$ks" -storepass android -alias androiddebugkey 2>/dev/null \
+          got=$(LC_ALL=C keytool -J-Duser.language=en -list -v -keystore "$ks" -storepass "$KEYSTORE_PASSWORD" -alias youplay 2>/dev/null \
             | grep -i 'SHA256:' | head -1 | sed 's/.*SHA256: *//' | tr -d ':' | tr 'A-F' 'a-f')
           if [ "$got" != "$EXPECTED_CERT_SHA256" ]; then
-            echo "::error::Le secret KEYSTORE_BASE64 ne contient pas la bonne clé (empreinte '$got'). Recopie-le avec : base64 -w0 ~/.android/debug.keystore"
+            echo "::error::Le secret KEYSTORE_BASE64 ne contient pas la bonne clé (empreinte '$got'). Recopie-le avec : base64 -w0 ~/.android/youplay-release.jks"
             exit 1
           fi
           echo "YOUPLAY_KEYSTORE=$ks" >> "$GITHUB_ENV"
+          echo "YOUPLAY_KEYSTORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
 
       - name: Numéro de version
         id: v

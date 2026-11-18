@@ -20,7 +20,6 @@ class MainActivity : AudioServiceActivity() {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         NewPipeBridge.register(messenger)
         transfer.register(messenger)
-        transfer.handleIntent(intent)
 
         // Stockage public : dossier Music et indexation par la médiathèque Android.
         MethodChannel(messenger, "youplay/media").setMethodCallHandler { call, result ->
@@ -71,12 +70,6 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
-    }
-
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        transfer.handleIntent(intent)
     }
 
     @Deprecated("Résultats des sélecteurs de fichiers et de la confirmation de suppression Android")

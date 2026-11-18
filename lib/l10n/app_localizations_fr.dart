@@ -1107,26 +1107,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get restoreAction => 'Restaurer';
 
   @override
-  String get migrateSendAction => 'Transférer vers la nouvelle YouPlay';
-
-  @override
-  String get migrateFetchAction => 'Récupérer depuis l\'ancienne YouPlay';
-
-  @override
-  String get migrateTitle => 'YouPlay a déménagé';
-
-  @override
-  String get migrateLegacyBody =>
-      'La nouvelle YouPlay est installée. Transfère-lui ta bibliothèque : likes, playlists, historique et sons téléchargés.';
-
-  @override
-  String get migrateTransfer => 'Transférer';
-
-  @override
-  String get migrateLegacyDoneBody =>
-      'Ta bibliothèque est dans la nouvelle YouPlay. Cette ancienne version ne recevra plus de mises à jour : tu peux la désinstaller.';
-
-  @override
   String get migrateUninstall => 'Désinstaller';
 
   @override
@@ -1134,17 +1114,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get migrateNewBody =>
-      'L\'ancienne YouPlay est sur ce téléphone. Récupérer sa bibliothèque : likes, playlists, historique et sons téléchargés ?';
-
-  @override
-  String get migrateFetch => 'Récupérer';
+      'L\'ancienne YouPlay est encore sur ce téléphone. Pour récupérer ta bibliothèque : ouvre-la, va dans Réglages › Sauvegarde › Exporter vers un fichier, puis reviens ici : Réglages › Sauvegarde › Restaurer.';
 
   @override
   String get adoptTitle => 'Tes sons téléchargés';
 
   @override
   String get adoptBody =>
-      'Android les considère encore comme ceux de l\'ancienne YouPlay. Pour pouvoir les ranger et les supprimer, la nouvelle va les recopier : Android te demandera d\'autoriser la suppression des fichiers originaux.';
+      'Ils ont été téléchargés par une autre installation de YouPlay : Android les garde en lecture seule. Pour pouvoir les ranger et les supprimer, YouPlay va les recopier, et Android te demandera d\'autoriser la suppression des fichiers originaux.';
 
   @override
   String get adoptAction => 'Continuer';
@@ -1159,4 +1136,30 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get updateNewAppNote =>
       'Cette version s\'installe à côté de l\'ancienne (nouvel identifiant, pour les catalogues d\'apps libres). Ta bibliothèque sera transférée juste après.';
+
+  @override
+  String get migrateOpenLegacy => 'Ouvrir l\'ancienne';
+
+  @override
+  String get migrateOpenLegacyAction =>
+      'Ouvrir l\'ancienne YouPlay pour exporter';
+
+  @override
+  String get updateAutoTitle => 'Mises à jour';
+
+  @override
+  String get updateAutoBody =>
+      'YouPlay peut vérifier au démarrage s\'il existe une nouvelle version sur GitHub et te la proposer. Tu pourras changer d\'avis dans les réglages.';
+
+  @override
+  String get updateAutoEnable => 'Activer';
+
+  @override
+  String get noThanks => 'Non merci';
+
+  @override
+  String get updateAuto => 'Vérifier automatiquement';
+
+  @override
+  String get updateAutoSub => 'Au démarrage, sur GitHub';
 }

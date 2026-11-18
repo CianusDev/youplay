@@ -8,96 +8,72 @@ import '../../data/media_storage.dart';
 import '../../l10n/l10n.dart';
 import '../../theme/sika_tokens.dart';
 
-// Étapes du déménagement, mémorisées dans chaque app.
-const _sentKey = 'youplay.migrate.sent'; // ancienne app : bibliothèque envoyée
-const _askedKey = 'youplay.migrate.asked'; // nouvelle app : proposition déjà faite
-const _importedKey = 'youplay.migrate.imported'; // nouvelle app : bibliothèque reçue
-const _adoptKey = 'youplay.migrate.adopt'; // nouvelle app : sons à reprendre au prochain lancement
+const _askedKey = 'youplay.migrate.asked'; // guide « ancienne YouPlay » déjà montré
+const _adoptKey = 'youplay.migrate.adopt'; // sons à reprendre après une restauration
+const autoUpdateKey = 'youplay.update.auto'; // recherche de mise à jour au démarrage (null = pas encore demandé)
 
-bool _busy = false;
+/// Après une restauration : au prochain lancement, on reprend les sons d'une autre app.
+Future<void> markRestored(SharedPreferences prefs) => prefs.setBool(_adoptKey, true);
 
-/// Déménagement `com.example.sika_app` → `io.github.cianusdev.youplay`.
+/// Étapes du passage à la nouvelle app, au démarrage. Retourne true si une étape a été montrée.
 ///
-/// Au démarrage ([resumed] = false), propose chaque étape ; au retour dans l'app
-/// ([resumed] = true), traite seulement ce que l'autre app vient d'envoyer ou de demander.
-/// Retourne true quand le déménagement est en cours (pas de recherche de mise à jour alors).
-Future<bool> runMigration(BuildContext context, {bool resumed = false}) async {
-  if (!Platform.isAndroid || _busy) return false;
-  _busy = true;
+/// L'ancienne YouPlay (`com.example.sika_app`) est signée avec une autre clé : la bibliothèque
+/// passe par un fichier (Exporter là-bas, Restaurer ici), puis les sons téléchargés sont repris.
+Future<bool> runMigration(BuildContext context) async {
+  if (!Platform.isAndroid) return false;
+  final MigrationInfo info;
   try {
-    final MigrationInfo info;
-    try {
-      info = await LibraryBackup.info();
-    } catch (_) {
-      return false;
-    }
-    final prefs = await SharedPreferences.getInstance();
-    if (!context.mounted) return false;
-    if (info.isLegacy) return await _legacy(context, info, prefs, resumed);
-    if (info.isNew) return await _newApp(context, info, prefs, resumed);
+    info = await LibraryBackup.info();
+  } catch (_) {
     return false;
-  } finally {
-    _busy = false;
   }
-}
-
-/// Ancienne app : envoie la bibliothèque, puis invite à se désinstaller.
-Future<bool> _legacy(BuildContext context, MigrationInfo info, SharedPreferences prefs, bool resumed) async {
-  if (!info.otherReady) return false;
-  final l = context.l10n;
-  // La nouvelle app vient de la demander : l'utilisateur a déjà accepté là-bas.
-  if (await LibraryBackup.takeRequest()) {
-    if (await LibraryBackup.send(prefs)) await prefs.setBool(_sentKey, true);
-    return true;
-  }
-  if (resumed || !context.mounted) return true;
-  if (prefs.getBool(_sentKey) != true) {
-    if (await _ask(context, l.migrateTitle, l.migrateLegacyBody, l.migrateTransfer) && await LibraryBackup.send(prefs)) {
-      await prefs.setBool(_sentKey, true);
-    }
-  } else if (await _ask(context, l.migrateTitle, l.migrateLegacyDoneBody, l.migrateUninstall)) {
-    await LibraryBackup.uninstallLegacy();
-  }
-  return true;
-}
-
-/// Nouvelle app : reçoit la bibliothèque, reprend les sons téléchargés, invite à désinstaller l'ancienne.
-Future<bool> _newApp(BuildContext context, MigrationInfo info, SharedPreferences prefs, bool resumed) async {
-  final data = LibraryBackup.parse(await LibraryBackup.takeImport());
-  if (data != null) {
-    await LibraryBackup.restore(prefs, data, checkFiles: false);
-    await prefs.setBool(_importedKey, true);
-    await prefs.setBool(_adoptKey, true);
-    await LibraryBackup.restart(); // recharge tout avec la bibliothèque reçue
-    return true;
-  }
-  if (resumed || !context.mounted) return false;
+  final prefs = await SharedPreferences.getInstance();
+  if (!context.mounted) return false;
   final l = context.l10n;
 
   if (prefs.getBool(_adoptKey) == true) {
     await prefs.remove(_adoptKey);
+    var shown = false;
     final paths = LibraryBackup.downloadedPaths(prefs);
-    // Android 11+ : les fichiers appartiennent encore à l'ancienne app (lecture seule pour nous).
-    if (info.sdk >= 30 && paths.isNotEmpty && context.mounted && await _ask(context, l.adoptTitle, l.adoptBody, l.adoptAction)) {
+    if (paths.isNotEmpty) {
+      // Sans « Musique et audio », les sons d'une autre app sont invisibles (ni lus, ni repris).
       await MediaStorage.ensurePermission();
-      try {
-        await LibraryBackup.adopt(paths);
-      } catch (_) {}
+      final foreign = await LibraryBackup.foreignCount(paths).catchError((_) => 0);
+      if (foreign > 0 && context.mounted) {
+        shown = true;
+        if (await _ask(context, l.adoptTitle, l.adoptBody, l.adoptAction)) {
+          await LibraryBackup.adopt(paths).catchError((_) => 0);
+        }
+      }
     }
-    if (info.otherReady && context.mounted && await _ask(context, l.migrateDoneTitle, l.migrateNewDoneBody, l.migrateUninstall)) {
-      await LibraryBackup.uninstallLegacy();
+    if (info.legacyInstalled && context.mounted) {
+      shown = true;
+      if (await _ask(context, l.migrateDoneTitle, l.migrateNewDoneBody, l.migrateUninstall)) {
+        await LibraryBackup.uninstallLegacy();
+      }
     }
-    return true;
+    return shown;
   }
 
-  if (info.otherReady && prefs.getBool(_importedKey) != true && prefs.getBool(_askedKey) != true) {
-    await prefs.setBool(_askedKey, true); // une seule fois ; ensuite via Réglages › Sauvegarde
-    if (context.mounted && await _ask(context, l.migrateNewTitle, l.migrateNewBody, l.migrateFetch)) {
-      await LibraryBackup.requestFromOther();
+  if (info.legacyInstalled && prefs.getBool(_askedKey) != true) {
+    await prefs.setBool(_askedKey, true); // une seule fois ; Réglages › Sauvegarde reste disponible
+    if (context.mounted && await _ask(context, l.migrateNewTitle, l.migrateNewBody, l.migrateOpenLegacy)) {
+      await LibraryBackup.openLegacy();
     }
     return true;
   }
   return false;
+}
+
+/// Recherche de mise à jour au démarrage : seulement si l'utilisateur l'a activée (demandé une fois).
+Future<bool> autoUpdateAllowed(BuildContext context) async {
+  final prefs = await SharedPreferences.getInstance();
+  final v = prefs.getBool(autoUpdateKey);
+  if (v != null || !context.mounted) return v ?? false;
+  final l = context.l10n;
+  final yes = await _ask(context, l.updateAutoTitle, l.updateAutoBody, l.updateAutoEnable, dismiss: l.noThanks);
+  await prefs.setBool(autoUpdateKey, yes);
+  return yes;
 }
 
 Future<bool> _ask(BuildContext context, String title, String body, String action, {String? dismiss}) async {

@@ -1100,26 +1100,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get restoreAction => 'Restore';
 
   @override
-  String get migrateSendAction => 'Transfer to the new YouPlay';
-
-  @override
-  String get migrateFetchAction => 'Get library from the old YouPlay';
-
-  @override
-  String get migrateTitle => 'YouPlay has moved';
-
-  @override
-  String get migrateLegacyBody =>
-      'The new YouPlay is installed. Transfer your library to it: likes, playlists, history and downloaded songs.';
-
-  @override
-  String get migrateTransfer => 'Transfer';
-
-  @override
-  String get migrateLegacyDoneBody =>
-      'Your library is in the new YouPlay. This old version won\'t get updates anymore: you can uninstall it.';
-
-  @override
   String get migrateUninstall => 'Uninstall';
 
   @override
@@ -1127,17 +1107,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get migrateNewBody =>
-      'The old YouPlay is on this phone. Bring over its library: likes, playlists, history and downloaded songs?';
-
-  @override
-  String get migrateFetch => 'Bring it over';
+      'The old YouPlay is still on this phone. To bring over your library: open it, go to Settings › Backup › Export to a file, then come back here: Settings › Backup › Restore.';
 
   @override
   String get adoptTitle => 'Your downloaded songs';
 
   @override
   String get adoptBody =>
-      'Android still treats them as the old YouPlay\'s. To organise and delete them, the new one will copy them: Android will ask you to allow deleting the original files.';
+      'They were downloaded by another YouPlay install, so Android keeps them read-only. To organise and delete them, YouPlay will copy them, and Android will ask you to allow deleting the original files.';
 
   @override
   String get adoptAction => 'Continue';
@@ -1152,4 +1129,29 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get updateNewAppNote =>
       'This version installs next to the old one (new app ID, for free-software app stores). Your library is transferred right after.';
+
+  @override
+  String get migrateOpenLegacy => 'Open old app';
+
+  @override
+  String get migrateOpenLegacyAction => 'Open the old YouPlay to export';
+
+  @override
+  String get updateAutoTitle => 'Updates';
+
+  @override
+  String get updateAutoBody =>
+      'YouPlay can check GitHub for a new version at startup and offer it to you. You can change your mind in settings.';
+
+  @override
+  String get updateAutoEnable => 'Turn on';
+
+  @override
+  String get noThanks => 'No thanks';
+
+  @override
+  String get updateAuto => 'Check automatically';
+
+  @override
+  String get updateAutoSub => 'At startup, on GitHub';
 }
