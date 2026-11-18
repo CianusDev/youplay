@@ -1203,4 +1203,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get install => 'Install';
+
+  @override
+  String get feedbackTitle => 'Send feedback';
+
+  @override
+  String get feedbackSub => 'Report a bug or suggest an idea';
+
+  @override
+  String get feedbackWrite => 'Write';
+
+  @override
+  String get feedbackBug => 'Bug';
+
+  @override
+  String get feedbackIdea => 'Idea';
+
+  @override
+  String get feedbackHintBug =>
+      'What isn\'t working? What were you doing at the time?';
+
+  @override
+  String get feedbackHintIdea => 'What would you like YouPlay to do?';
+
+  @override
+  String get feedbackInfoNote =>
+      'App version, Android version and phone model are added to help fix issues. You review everything before sending.';
+
+  @override
+  String get feedbackEmail => 'Send by email';
+
+  @override
+  String get feedbackGithub => 'Or open an issue on GitHub (account required)';
+
+  @override
+  String get feedbackEmpty => 'Write your message first';
+
+  @override
+  String feedbackNoMailApp(String email) {
+    return 'No email app found. Write to $email';
+  }
 }

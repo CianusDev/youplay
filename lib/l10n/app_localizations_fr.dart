@@ -1212,4 +1212,45 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get install => 'Installer';
+
+  @override
+  String get feedbackTitle => 'Envoyer un avis';
+
+  @override
+  String get feedbackSub => 'Signaler un bug ou proposer une idée';
+
+  @override
+  String get feedbackWrite => 'Écrire';
+
+  @override
+  String get feedbackBug => 'Bug';
+
+  @override
+  String get feedbackIdea => 'Idée';
+
+  @override
+  String get feedbackHintBug =>
+      'Qu\'est-ce qui ne marche pas ? Qu\'est-ce que tu faisais à ce moment-là ?';
+
+  @override
+  String get feedbackHintIdea => 'Qu\'aimerais-tu que YouPlay sache faire ?';
+
+  @override
+  String get feedbackInfoNote =>
+      'La version de l\'app, celle d\'Android et le modèle du téléphone sont ajoutés pour aider à corriger. Tu relis tout avant l\'envoi.';
+
+  @override
+  String get feedbackEmail => 'Envoyer par e-mail';
+
+  @override
+  String get feedbackGithub =>
+      'Ou ouvrir un ticket sur GitHub (compte nécessaire)';
+
+  @override
+  String get feedbackEmpty => 'Écris d\'abord ton message';
+
+  @override
+  String feedbackNoMailApp(String email) {
+    return 'Aucune appli mail trouvée. Écris à $email';
+  }
 }

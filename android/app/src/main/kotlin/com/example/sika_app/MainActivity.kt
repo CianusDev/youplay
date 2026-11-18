@@ -3,6 +3,7 @@ package com.example.sika_app
 import android.content.Intent
 import android.media.AudioManager
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import androidx.core.content.FileProvider
@@ -44,7 +45,15 @@ class MainActivity : AudioServiceActivity() {
                 "info" -> {
                     val info = packageManager.getPackageInfo(packageName, 0)
                     val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
-                    result.success(mapOf("versionCode" to code, "versionName" to info.versionName, "abis" to Build.SUPPORTED_ABIS.toList(), "packageName" to packageName))
+                    result.success(mapOf(
+                        "versionCode" to code,
+                        "versionName" to info.versionName,
+                        "abis" to Build.SUPPORTED_ABIS.toList(),
+                        "packageName" to packageName,
+                        "android" to Build.VERSION.RELEASE,
+                        "sdk" to Build.VERSION.SDK_INT,
+                        "device" to "${Build.MANUFACTURER} ${Build.MODEL}",
+                    ))
                 }
                 "install" -> {
                     val file = File(call.argument<String>("path")!!)
@@ -60,6 +69,22 @@ class MainActivity : AudioServiceActivity() {
             }
         }
 
+        // Avis : appli mail pré-remplie, ou page web (ticket GitHub pré-rempli).
+        MethodChannel(messenger, "youplay/feedback").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "email" -> {
+                    val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:")).apply {
+                        putExtra(Intent.EXTRA_EMAIL, arrayOf(call.argument<String>("to")!!))
+                        putExtra(Intent.EXTRA_SUBJECT, call.argument<String>("subject"))
+                        putExtra(Intent.EXTRA_TEXT, call.argument<String>("body"))
+                    }
+                    result.success(launch(intent))
+                }
+                "open" -> result.success(launch(Intent(Intent.ACTION_VIEW, Uri.parse(call.argument<String>("url")!!))))
+                else -> result.notImplemented()
+            }
+        }
+
         // Appel en cours (sonnerie, GSM, VoIP) : sert à reprendre la musique à la fin d'un appel sur MIUI.
         MethodChannel(messenger, "youplay/audio").setMethodCallHandler { call, result ->
             when (call.method) {
@@ -70,6 +95,14 @@ class MainActivity : AudioServiceActivity() {
                 else -> result.notImplemented()
             }
         }
+    }
+
+    /** false si aucune appli ne sait ouvrir l'intent (pas d'appli mail, pas de navigateur). */
+    private fun launch(intent: Intent): Boolean = try {
+        startActivity(intent)
+        true
+    } catch (_: android.content.ActivityNotFoundException) {
+        false
     }
 
     @Deprecated("Résultats des sélecteurs de fichiers et de la confirmation de suppression Android")

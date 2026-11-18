@@ -2161,6 +2161,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Install'**
   String get install;
+
+  /// No description provided for @feedbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Send feedback'**
+  String get feedbackTitle;
+
+  /// No description provided for @feedbackSub.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug or suggest an idea'**
+  String get feedbackSub;
+
+  /// No description provided for @feedbackWrite.
+  ///
+  /// In en, this message translates to:
+  /// **'Write'**
+  String get feedbackWrite;
+
+  /// No description provided for @feedbackBug.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug'**
+  String get feedbackBug;
+
+  /// No description provided for @feedbackIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'Idea'**
+  String get feedbackIdea;
+
+  /// No description provided for @feedbackHintBug.
+  ///
+  /// In en, this message translates to:
+  /// **'What isn\'t working? What were you doing at the time?'**
+  String get feedbackHintBug;
+
+  /// No description provided for @feedbackHintIdea.
+  ///
+  /// In en, this message translates to:
+  /// **'What would you like YouPlay to do?'**
+  String get feedbackHintIdea;
+
+  /// No description provided for @feedbackInfoNote.
+  ///
+  /// In en, this message translates to:
+  /// **'App version, Android version and phone model are added to help fix issues. You review everything before sending.'**
+  String get feedbackInfoNote;
+
+  /// No description provided for @feedbackEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Send by email'**
+  String get feedbackEmail;
+
+  /// No description provided for @feedbackGithub.
+  ///
+  /// In en, this message translates to:
+  /// **'Or open an issue on GitHub (account required)'**
+  String get feedbackGithub;
+
+  /// No description provided for @feedbackEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Write your message first'**
+  String get feedbackEmpty;
+
+  /// No description provided for @feedbackNoMailApp.
+  ///
+  /// In en, this message translates to:
+  /// **'No email app found. Write to {email}'**
+  String feedbackNoMailApp(String email);
 }
 
 class _AppLocalizationsDelegate

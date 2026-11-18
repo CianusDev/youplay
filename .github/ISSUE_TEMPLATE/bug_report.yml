@@ -1,0 +1,19 @@
+name: Bug report
+description: Something doesn't work as expected
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: App and device
+      description: YouPlay version, Android version and phone model (Settings › Send feedback fills this in).
+      render: text
+    validations:
+      required: false

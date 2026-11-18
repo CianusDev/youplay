@@ -45,6 +45,18 @@ class AppUpdater {
 
   static Future<String> currentVersionName() async => (await _deviceInfo())['versionName'] as String? ?? '';
 
+  /// Infos techniques jointes aux avis : version de l'app, d'Android, modèle du téléphone.
+  static Future<String> diagnostics() async {
+    try {
+      final i = await _deviceInfo();
+      return 'YouPlay ${i['versionName']} (${await currentBuild()})\n'
+          'Android ${i['android']} (SDK ${i['sdk']})\n'
+          '${i['device']}';
+    } catch (_) {
+      return 'YouPlay';
+    }
+  }
+
   /// Dernière release si elle est plus récente que l'app installée, sinon null.
   /// Lit `version.json` publié avec chaque release, via une simple redirection GitHub :
   /// l'API REST est évitée car limitée à 60 requêtes/heure par adresse IP, vite atteinte

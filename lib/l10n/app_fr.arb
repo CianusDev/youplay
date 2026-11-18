@@ -343,5 +343,17 @@
   "importPlaylistTruncated": "Seuls les {max} premiers titres sont importés.",
   "importAction": "Importer",
   "updateReady": "Déjà téléchargée, prête à installer",
-  "install": "Installer"
+  "install": "Installer",
+  "feedbackTitle": "Envoyer un avis",
+  "feedbackSub": "Signaler un bug ou proposer une idée",
+  "feedbackWrite": "Écrire",
+  "feedbackBug": "Bug",
+  "feedbackIdea": "Idée",
+  "feedbackHintBug": "Qu'est-ce qui ne marche pas ? Qu'est-ce que tu faisais à ce moment-là ?",
+  "feedbackHintIdea": "Qu'aimerais-tu que YouPlay sache faire ?",
+  "feedbackInfoNote": "La version de l'app, celle d'Android et le modèle du téléphone sont ajoutés pour aider à corriger. Tu relis tout avant l'envoi.",
+  "feedbackEmail": "Envoyer par e-mail",
+  "feedbackGithub": "Ou ouvrir un ticket sur GitHub (compte nécessaire)",
+  "feedbackEmpty": "Écris d'abord ton message",
+  "feedbackNoMailApp": "Aucune appli mail trouvée. Écris à {email}"
 }

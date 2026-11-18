@@ -12,6 +12,7 @@ import '../../state/download_manager.dart';
 import '../../state/library_store.dart';
 import '../../theme/sika_tokens.dart';
 import '../components/common.dart';
+import '../components/feedback_sheet.dart';
 import '../components/migration_flow.dart';
 import '../components/sika_switch.dart';
 import '../components/update_dialog.dart';
@@ -61,6 +62,14 @@ class _SettingsSheet extends ConsumerWidget {
             const _LanguageRow(),
             if (DownloadManager.supported) const _BackupRow(),
             if (DownloadManager.supported) const _BackgroundPlaybackRow(),
+            _Row(
+              title: l.feedbackTitle,
+              subtitle: l.feedbackSub,
+              trailing: TextButton(
+                onPressed: () => showFeedbackSheet(context),
+                child: Text(l.feedbackWrite, style: SikaText.ui(13, w: FontWeight.w800, color: SikaColors.yellow)),
+              ),
+            ),
             if (DownloadManager.supported) const _AutoUpdateRow(),
             if (DownloadManager.supported) const _UpdateRow(),
             const SizedBox(height: 16),

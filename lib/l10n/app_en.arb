@@ -672,5 +672,24 @@
   },
   "importAction": "Import",
   "updateReady": "Already downloaded, ready to install",
-  "install": "Install"
+  "install": "Install",
+  "feedbackTitle": "Send feedback",
+  "feedbackSub": "Report a bug or suggest an idea",
+  "feedbackWrite": "Write",
+  "feedbackBug": "Bug",
+  "feedbackIdea": "Idea",
+  "feedbackHintBug": "What isn't working? What were you doing at the time?",
+  "feedbackHintIdea": "What would you like YouPlay to do?",
+  "feedbackInfoNote": "App version, Android version and phone model are added to help fix issues. You review everything before sending.",
+  "feedbackEmail": "Send by email",
+  "feedbackGithub": "Or open an issue on GitHub (account required)",
+  "feedbackEmpty": "Write your message first",
+  "feedbackNoMailApp": "No email app found. Write to {email}",
+  "@feedbackNoMailApp": {
+    "placeholders": {
+      "email": {
+        "type": "String"
+      }
+    }
+  }
 }
