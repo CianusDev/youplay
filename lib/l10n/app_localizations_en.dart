@@ -1197,4 +1197,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get importAction => 'Import';
+
+  @override
+  String get updateReady => 'Already downloaded, ready to install';
+
+  @override
+  String get install => 'Install';
 }

@@ -670,5 +670,7 @@
       }
     }
   },
-  "importAction": "Import"
+  "importAction": "Import",
+  "updateReady": "Already downloaded, ready to install",
+  "install": "Install"
 }

@@ -82,19 +82,58 @@ class AppUpdater {
     );
   }
 
-  /// Télécharge l'APK dans le cache (dossier partagé avec l'installateur via FileProvider).
+  /// Dossier des APK : dans les fichiers privés de l'app (pas le cache, qu'Android peut vider),
+  /// partagé avec l'installateur via FileProvider (`update_paths.xml`).
+  static Future<Directory> _dir() async {
+    final d = Directory('${(await getApplicationSupportDirectory()).path}/updates');
+    await d.create(recursive: true);
+    return d;
+  }
+
+  static Future<File> _apkFile(AppRelease r) async => File('${(await _dir()).path}/youplay-${r.versionCode}.apk');
+
+  /// APK de cette version déjà téléchargé en entier (téléphone éteint, installation reportée…).
+  static Future<File?> downloaded(AppRelease r) async {
+    final f = await _apkFile(r);
+    if (!await f.exists()) return null;
+    if (r.apkSize > 0 && await f.length() != r.apkSize) return null;
+    return f;
+  }
+
+  /// Télécharge l'APK, ou réutilise celui déjà téléchargé. Un téléchargement interrompu
+  /// (coupure réseau, téléphone éteint) reprend là où il s'était arrêté.
   static Future<File> download(AppRelease r, void Function(double progress) onProgress) async {
-    final dir = Directory('${(await getTemporaryDirectory()).path}/updates');
-    if (await dir.exists()) await dir.delete(recursive: true); // anciens APK
-    await dir.create(recursive: true);
-    final file = File('${dir.path}/youplay-${r.versionCode}.apk');
+    final dir = await _dir();
+    final file = await _apkFile(r);
+    final part = File('${file.path}.part');
+    // Anciennes versions : plus utiles.
+    await for (final e in dir.list()) {
+      if (e is File && e.path != file.path && e.path != part.path) await e.delete();
+    }
+    if (await downloaded(r) != null) {
+      onProgress(1);
+      return file;
+    }
+    var have = await part.exists() ? await part.length() : 0;
+    if (r.apkSize > 0 && have > r.apkSize) {
+      await part.delete();
+      have = 0;
+    }
     final client = http.Client();
     try {
-      final res = await client.send(http.Request('GET', Uri.parse(r.apkUrl)));
-      if (res.statusCode != 200) throw HttpException('HTTP ${res.statusCode}');
-      final total = res.contentLength ?? r.apkSize;
-      var received = 0;
-      final sink = file.openWrite();
+      final req = http.Request('GET', Uri.parse(r.apkUrl));
+      if (have > 0) req.headers['Range'] = 'bytes=$have-';
+      final res = await client.send(req);
+      if (res.statusCode == 200) {
+        have = 0; // le serveur renvoie tout : on repart de zéro
+      } else if (res.statusCode != 206) {
+        if (res.statusCode == 416) await part.delete(); // morceau invalide : recommencer au prochain essai
+        throw HttpException('HTTP ${res.statusCode}');
+      }
+      final total = r.apkSize > 0 ? r.apkSize : have + (res.contentLength ?? 0);
+      var received = have;
+      if (total > 0) onProgress(received / total);
+      final sink = part.openWrite(mode: have > 0 ? FileMode.append : FileMode.write);
       try {
         await for (final chunk in res.stream) {
           sink.add(chunk);
@@ -104,10 +143,26 @@ class AppUpdater {
       } finally {
         await sink.close();
       }
-      return file;
+      if (r.apkSize > 0 && await part.length() != r.apkSize) throw const HttpException('APK incomplet');
+      return await part.rename(file.path);
     } finally {
       client.close();
     }
+  }
+
+  /// Au démarrage : supprime les APK déjà installés (version égale ou plus ancienne que l'app).
+  static Future<void> cleanup() async {
+    try {
+      final current = await currentBuild();
+      final dir = await _dir();
+      await for (final e in dir.list()) {
+        final code = int.tryParse(RegExp(r'youplay-(\d+)\.apk').firstMatch(e.path)?.group(1) ?? '');
+        if (code != null && code <= current) await e.delete();
+      }
+      // Ancien emplacement (cache) des versions précédentes de l'app.
+      final old = Directory('${(await getTemporaryDirectory()).path}/updates');
+      if (await old.exists()) await old.delete(recursive: true);
+    } catch (_) {}
   }
 
   /// Ouvre l'installateur Android (l'utilisateur confirme ; la 1re fois, il autorise YouPlay).

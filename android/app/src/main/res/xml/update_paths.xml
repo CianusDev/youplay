@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Dossier des APK de mise à jour (cache de l'app), lisible par l'installateur via FileProvider. -->
+<!-- Dossier des APK de mise à jour (fichiers privés de l'app), lisible par l'installateur via FileProvider. -->
 <paths>
-    <cache-path name="updates" path="updates/"/>
+    <files-path name="updates" path="updates/"/>
 </paths>

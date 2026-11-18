@@ -9,6 +9,7 @@ import 'package:just_audio_background/just_audio_background.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'data/app_update.dart';
 import 'l10n/l10n.dart';
 import 'router.dart';
 import 'state/playlist_folders.dart';
@@ -56,6 +57,8 @@ Future<void> main() async {
 /// Passage depuis l'ancienne YouPlay, sinon mise à jour publiée sur GitHub :
 /// proposés une fois l'écran d'accueil affiché.
 void _scheduleStartupChecks() {
+  AppUpdater.cleanup(); // APK de mises à jour déjà installées
+
   BuildContext? overlay() => rootNavigatorKey.currentState?.overlay?.context;
 
   Future.delayed(const Duration(seconds: 4), () async {

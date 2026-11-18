@@ -1206,4 +1206,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get importAction => 'Importer';
+
+  @override
+  String get updateReady => 'Déjà téléchargée, prête à installer';
+
+  @override
+  String get install => 'Installer';
 }

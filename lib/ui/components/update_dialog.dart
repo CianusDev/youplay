@@ -46,6 +46,15 @@ class _UpdateDialog extends StatefulWidget {
 class _UpdateDialogState extends State<_UpdateDialog> {
   double? _progress; // null = pas commencé
   String? _error;
+  bool _ready = false; // APK déjà téléchargé : installation directe
+
+  @override
+  void initState() {
+    super.initState();
+    AppUpdater.downloaded(widget.release).then((f) {
+      if (mounted && f != null) setState(() => _ready = true);
+    });
+  }
 
   Future<void> _update() async {
     setState(() {
@@ -83,6 +92,10 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text('YouPlay ${r.versionName}$mb', style: SikaText.meta),
+          if (_ready && !busy) ...[
+            const SizedBox(height: 8),
+            Text(l.updateReady, style: SikaText.ui(13, w: FontWeight.w700, color: SikaColors.yellow)),
+          ],
           if (r.newApp) ...[
             const SizedBox(height: 12),
             Text(l.updateNewAppNote, style: SikaText.ui(14, color: SikaColors.text, height: 1.45)),
@@ -123,7 +136,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         ),
         TextButton(
           onPressed: busy ? null : _update,
-          child: Text(_error != null ? l.retry : l.update,
+          child: Text(_error != null ? l.retry : (_ready ? l.install : l.update),
               style: SikaText.ui(14, w: FontWeight.w800, color: busy ? SikaColors.placeholder : SikaColors.yellow)),
         ),
       ],
