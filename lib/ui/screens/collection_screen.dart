@@ -85,8 +85,12 @@ final collectionProvider = FutureProvider.family<CollectionData, CollectionRef>(
         ].join('\n'),
       );
     case CollectionKind.ytquery:
-      final t = await ref.watch(ytSongsProvider(c.id).future);
       final isArtist = c.subtitle == 'Artiste';
+      final channel = c.id.startsWith('http') ? c.id : null;
+      final t = await ref.watch((isArtist
+              ? ytArtistTracksProvider((c.title.isEmpty ? c.id : c.title, channel))
+              : ytSongsProvider(c.id))
+          .future);
       return CollectionData(
         title: c.title.isEmpty ? c.id : c.title,
         eyebrow: isArtist ? l.eyebrowArtist : l.eyebrowMix,

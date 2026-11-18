@@ -64,6 +64,7 @@ class YoutubeSource {
         handle: m['verified'] == true ? 'verified' : '',
         imageUrl: m['thumbnail'] as String?,
         followers: (m['subscribers'] as num?)?.toInt() ?? 0,
+        url: m['url'] as String?,
       );
     }).toList();
   }
@@ -71,6 +72,10 @@ class YoutubeSource {
   /// Suggestions de saisie (autocomplétion YouTube).
   Future<List<String>> suggestions(String query) async =>
       (await _ch.invokeListMethod<String>('suggestions', {'query': query})) ?? const [];
+
+  /// Titres d'un artiste (sa chaîne YouTube), pas une simple recherche sur son nom.
+  /// [url] : sa chaîne si on la connaît ; sinon la chaîne qui porte exactement ce nom.
+  Future<List<Track>> artistTracks(String name, {String? url}) => _tracks('artistTracks', {'name': name, 'url': url});
 
   Future<List<Track>> searchVideos(String query) => _tracks('searchVideos', {'query': query});
   Future<List<Track>> related(String trackId) => _tracks('related', {'id': videoIdOf(trackId)});

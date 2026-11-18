@@ -8,7 +8,10 @@ import io.flutter.plugin.common.MethodChannel
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
 import org.schabi.newpipe.extractor.Image
+import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.ChannelInfoItem
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
+import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
 import org.schabi.newpipe.extractor.stream.StreamType
 import org.schabi.newpipe.extractor.InfoItem
 import org.schabi.newpipe.extractor.NewPipe
@@ -96,6 +99,7 @@ object NewPipeBridge {
         "searchSongs" -> searchSongs(call.argument<String>("query")!!)["songs"]
         "searchTop" -> searchSongs(call.argument<String>("query")!!)
         "searchArtists" -> searchArtists(call.argument<String>("query")!!)
+        "artistTracks" -> artistTracks(call.argument<String>("name")!!, call.argument<String>("url"))
         "suggestions" -> yt.suggestionExtractor.suggestionList(call.argument<String>("query")!!).take(8)
         "searchVideos" -> search(call.argument<String>("query")!!, YoutubeSearchQueryHandlerFactory.VIDEOS)
         "searchAlbums" -> searchAlbums(call.argument<String>("query")!!)
@@ -207,6 +211,41 @@ object NewPipeBridge {
             .take(6)
     }
 
+    /**
+     * Titres d'un artiste : ceux de SA chaîne (et de ses chaînes « - Topic » / VEVO), pas tout ce
+     * que renvoie une recherche sur son nom (« Wall.E » ramenait des extraits du film WALL-E).
+     * Si rien de sûr n'est trouvé, on garde la recherche sur le nom plutôt qu'une page vide.
+     */
+    private fun artistTracks(name: String, knownUrl: String?): List<Map<String, Any?>> {
+        // Chaîne : celle qu'on a ouverte, sinon celle qui porte EXACTEMENT ce nom (« WALL-E », le
+        // film, a le même nom simplifié que le rappeur « Wall.E » : on ne compare pas en simplifiant).
+        val url = knownUrl ?: runCatching {
+            val handler = yt.searchQHFactory.fromQuery(name, listOf(YoutubeSearchQueryHandlerFactory.CHANNELS), "")
+            SearchInfo.getInfo(yt, handler).relatedItems.filterIsInstance<ChannelInfoItem>()
+                .firstOrNull { cleanArtist(it.name).equals(name, ignoreCase = true) }?.url
+        }.getOrNull()
+        fun byArtist(uploader: String?, uploaderUrl: String?): Boolean =
+            (url != null && uploaderUrl == url) || cleanArtist(uploader).equals(name, ignoreCase = true)
+
+        @Suppress("UNCHECKED_CAST")
+        val found = runCatching { searchSongs(name)["songs"] as List<Map<String, Any?>> }.getOrDefault(emptyList())
+        val out = LinkedHashMap<String, Map<String, Any?>>()
+        found.filter { byArtist(it["uploader"] as? String, it["artistUrl"] as? String) }.forEach { out[it["id"] as String] = it }
+        // Vidéos publiées par la chaîne de l'artiste (complète la recherche).
+        if (url != null) {
+            runCatching {
+                val tab = ChannelInfo.getInfo(yt, url).tabs.firstOrNull { it.contentFilters.contains(ChannelTabs.VIDEOS) }
+                if (tab != null) {
+                    ChannelTabInfo.getInfo(yt, tab).relatedItems
+                        .filterIsInstance<StreamInfoItem>()
+                        .filter { it.duration in 60L..900L && !it.isShortFormContent && it.streamType == StreamType.VIDEO_STREAM }
+                        .forEach { s -> asSong(item(s)!!).let { out.putIfAbsent(it["id"] as String, it) } }
+                }
+            }
+        }
+        return if (out.isEmpty()) found else out.values.take(60)
+    }
+
     /** Minuscules, sans accents ni ponctuation. */
     private fun norm(s: String): String = java.text.Normalizer.normalize(s.lowercase(), java.text.Normalizer.Form.NFD)
         .replace(Regex("""\p{M}+"""), "")
@@ -313,6 +352,7 @@ object NewPipeBridge {
             "url" to i.url,
             "title" to i.name,
             "artist" to cleanArtist(i.uploaderName),
+            "uploader" to i.uploaderName,
             "artistUrl" to i.uploaderUrl,
             "duration" to i.duration,
             "thumbnail" to best(i.thumbnails),

@@ -30,9 +30,10 @@ CollectionRef playlistRef(Playlist p) => p.id.startsWith('http')
     ? CollectionRef(CollectionKind.ytalbum, p.id, title: p.name, artworkUrl: p.artworkUrl, subtitle: p.isAlbum ? 'Album' : 'Playlist')
     : CollectionRef(CollectionKind.ytquery, p.name, title: p.name, artworkUrl: p.artworkUrl, subtitle: 'Mix');
 
-/// Référence de la page d'un artiste : ses titres sur YouTube.
+/// Référence de la page d'un artiste : ses titres sur YouTube. Identifiant = sa chaîne quand on
+/// la connaît (homonymes : « Wall.E » le rappeur, « WALL-E » le film), sinon son nom.
 CollectionRef artistRef(Artist a) =>
-    CollectionRef(CollectionKind.ytquery, a.name, title: a.name, subtitle: 'Artiste', artworkUrl: a.imageUrl);
+    CollectionRef(CollectionKind.ytquery, a.url ?? a.name, title: a.name, subtitle: 'Artiste', artworkUrl: a.imageUrl);
 
 void showSnack(BuildContext context, String msg) {
   ScaffoldMessenger.of(context)

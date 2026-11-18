@@ -21,6 +21,9 @@ final youtubeProvider = Provider<YoutubeSource>((ref) => YoutubeSource());
 
 final ytSongsProvider = FutureProvider.family<List<Track>, String>((ref, q) => ref.watch(youtubeProvider).searchSongs(q));
 final ytSearchProvider = FutureProvider.family<YtSearch, String>((ref, q) => ref.watch(youtubeProvider).searchTop(q));
+final ytArtistTracksProvider = FutureProvider.family<List<Track>, (String, String?)>(
+  (ref, a) => ref.watch(youtubeProvider).artistTracks(a.$1, url: a.$2),
+);
 final ytArtistsProvider = FutureProvider.family<List<Artist>, String>((ref, q) => ref.watch(youtubeProvider).searchArtists(q));
 final ytSuggestionsProvider = FutureProvider.family<List<String>, String>((ref, q) => ref.watch(youtubeProvider).suggestions(q));
 final ytAlbumsProvider = FutureProvider.family<List<Playlist>, String>((ref, q) => ref.watch(youtubeProvider).searchAlbums(q));

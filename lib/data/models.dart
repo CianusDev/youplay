@@ -11,6 +11,7 @@ class Artist {
     this.imageUrl,
     this.followers = 0,
     this.bio = '',
+    this.url,
   });
 
   final String id;
@@ -20,12 +21,17 @@ class Artist {
   final int followers;
   final String bio;
 
+  /// Chaîne YouTube de l'artiste, quand on la connaît (résultat de recherche) : sa page liste
+  /// alors les titres de CETTE chaîne, pas tout ce que donne une recherche sur son nom.
+  final String? url;
+
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'handle': handle,
         'imageUrl': imageUrl,
         'followers': followers,
+        if (url != null) 'url': url,
       };
 
   factory Artist.fromJson(Map<String, dynamic> j) => Artist(
@@ -34,6 +40,7 @@ class Artist {
         handle: j['handle'] as String? ?? '',
         imageUrl: j['imageUrl'] as String?,
         followers: (j['followers'] as num?)?.toInt() ?? 0,
+        url: j['url'] as String?,
       );
 }
 
